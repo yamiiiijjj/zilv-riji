@@ -1,0 +1,24 @@
+{
+    "name": "自律日记",
+    "short_name": "自律日记",
+    "description": "每天记录工作、英语学习、减肥的自律打卡App",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#fef7f0",
+    "theme_color": "#f97316",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

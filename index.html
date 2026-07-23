@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="自律日记">
+<meta name="theme-color" content="#f97316">
+<title>自律日记</title>
+<link rel="manifest" href="manifest.json">
+<style>
+:root{
+--bg:#fef7f0;--card:#ffffff;--text:#2d1a0e;--text-secondary:#b08868;
+--primary:#f97316;--primary-light:#fb923c;--primary-dark:#ea580c;
+--primary-bg:rgba(249,115,22,0.08);--primary-bg2:rgba(249,115,22,0.15);
+--green:#10b981;--green-bg:rgba(16,185,129,0.1);
+--orange:#f59e0b;--orange-bg:rgba(245,158,11,0.1);
+--red:#ef4444;--red-bg:rgba(239,68,68,0.1);
+--blue:#3b82f6;--blue-bg:rgba(59,130,246,0.1);
+--border:#f0dcc8;--shadow:0 2px 16px rgba(180,120,60,0.08);
+--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+--sidebar-w:220px;
+}
+[data-theme="dark"]{
+--bg:#1a1008;--card:#261a10;--text:#f5e6d8;--text-secondary:#a08068;
+--primary:#fb923c;--primary-light:#fdba74;--primary-dark:#f97316;
+--primary-bg:rgba(249,115,22,0.12);--primary-bg2:rgba(249,115,22,0.2);
+--border:#3d2a18;--shadow:0 2px 16px rgba(0,0,0,0.3);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{
+font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB',sans-serif;
+background:var(--bg);color:var(--text);min-height:100vh;
+transition:background .3s,color .3s;-webkit-font-smoothing:antialiased;overscroll-behavior:none;
+}
+
+/* Layout */
+.app-wrap{display:flex;min-height:100vh;}
+.sidebar{
+position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);z-index:50;
+background:var(--card);display:flex;flex-direction:column;
+padding:16px 0 var(--safe-bottom);border-right:1px solid var(--border);overflow-y:auto;
+}
+.sidebar-logo{padding:12px 20px 10px;font-size:19px;font-weight:800;color:var(--primary);display:flex;align-items:center;gap:8px;}
+.sidebar-section{padding:12px 20px 4px;font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+.sidebar-item{
+display:flex;align-items:center;gap:10px;padding:11px 20px;margin:1px 12px;border-radius:10px;
+border:none;background:none;color:var(--text-secondary);font-size:14px;font-weight:500;
+cursor:pointer;width:calc(100% - 24px);text-align:left;transition:all .15s;font-family:inherit;
+}
+.sidebar-item:hover{background:var(--bg);}
+.sidebar-item:active{transform:scale(.97);}
+.sidebar-item.active{background:var(--primary-bg);color:var(--primary);font-weight:600;}
+.sidebar-item .si-icon{font-size:18px;width:24px;text-align:center;flex-shrink:0;}
+
+.main-area{flex:1;margin-left:var(--sidebar-w);min-height:100vh;}
+
+/* Header */
+.header{
+position:sticky;top:0;z-index:40;background:var(--bg);
+padding:12px 24px 8px;padding-top:calc(12px + var(--safe-top));
+display:flex;justify-content:space-between;align-items:center;
+}
+.header h1{font-size:22px;font-weight:800;letter-spacing:-.5px;}
+.icon-btn{
+width:36px;height:36px;border-radius:50%;border:none;background:var(--card);
+color:var(--text);font-size:17px;display:flex;align-items:center;justify-content:center;
+cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
+}
+.icon-btn:active{transform:scale(.9);}
+.menu-toggle{display:none;width:36px;height:36px;border-radius:10px;border:none;background:var(--card);color:var(--text);font-size:20px;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow);}
+.sidebar-overlay{display:none;}
+
+/* Page */
+.page{display:none;}
+.page.active{display:block;}
+
+/* Date bar */
+.date-bar{padding:0 24px 14px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;}
+.date-bar::-webkit-scrollbar{display:none;}
+.date-chip{flex-shrink:0;padding:8px 14px;border-radius:16px;background:var(--card);font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;transition:all .2s;text-align:center;min-width:52px;box-shadow:var(--shadow);}
+.date-chip .weekday{font-size:11px;opacity:.6;margin-bottom:2px;}
+.date-chip.active{background:var(--primary);color:white;}
+.date-chip.has-data::after{content:'';display:block;width:5px;height:5px;border-radius:50%;background:var(--green);margin:3px auto 0;}
+.date-chip.active.has-data::after{background:white;}
+
+/* Stats */
+.stats-row{display:flex;gap:12px;padding:0 24px 18px;overflow-x:auto;scrollbar-width:none;}
+.stats-row::-webkit-scrollbar{display:none;}
+.stat-card{flex-shrink:0;background:var(--card);border-radius:18px;padding:14px 16px;min-width:120px;box-shadow:var(--shadow);}
+.stat-card .label{font-size:11px;color:var(--text-secondary);margin-bottom:6px;}
+.stat-card .value{font-size:26px;font-weight:800;letter-spacing:-1px;}
+.stat-card .unit{font-size:13px;font-weight:500;color:var(--text-secondary);margin-left:2px;}
+.stat-card .sub{font-size:11px;color:var(--text-secondary);margin-top:3px;}
+.stat-card.streak .value{color:var(--orange);}
+.stat-card.rate .value{color:var(--green);}
+
+/* Section cards */
+.section{margin:0 24px 16px;background:var(--card);border-radius:18px;overflow:hidden;box-shadow:var(--shadow);}
+.section-header{padding:14px 18px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.section-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;}
+.section-icon.daily{background:var(--primary-bg);}
+.section-icon.english{background:var(--blue-bg);}
+.section-icon.fitness{background:var(--orange-bg);}
+.section-title{font-size:15px;font-weight:700;flex:1;}
+.section-status{font-size:11px;padding:3px 9px;border-radius:10px;font-weight:600;}
+.section-status.done{background:var(--green-bg);color:var(--green);}
+.section-status.partial{background:var(--orange-bg);color:var(--orange);}
+.section-status.pending{background:rgba(180,136,104,.1);color:var(--text-secondary);}
+.section-body{padding:6px 0;}
+
+.goal-item{display:flex;align-items:center;padding:10px 18px;gap:10px;}
+.goal-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;font-size:13px;color:transparent;}
+.goal-check.checked{background:var(--green);border-color:var(--green);color:white;}
+.goal-content{flex:1;}
+.goal-text{font-size:14px;font-weight:500;}
+.goal-text.checked{text-decoration:line-through;color:var(--text-secondary);}
+.goal-meta{font-size:11px;color:var(--text-secondary);margin-top:2px;}
+.goal-progress{display:flex;align-items:center;gap:6px;}
+.progress-input{width:55px;padding:5px 6px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:14px;font-weight:600;text-align:center;outline:none;}
+.progress-input:focus{border-color:var(--primary);}
+.progress-unit{font-size:12px;color:var(--text-secondary);white-space:nowrap;}
+.goal-delete{width:26px;height:26px;border:none;background:none;color:var(--text-secondary);font-size:15px;opacity:.4;cursor:pointer;}
+.goal-delete:active{opacity:1;}
+
+.progress-bar{height:4px;background:var(--border);border-radius:2px;margin:2px 18px 6px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;transition:width .4s ease;}
+.progress-fill.daily{background:var(--primary);}
+.progress-fill.english{background:var(--blue);}
+.progress-fill.fitness{background:var(--orange);}
+
+.add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;border:none;background:none;color:var(--primary);font-size:14px;font-weight:600;cursor:pointer;border-top:1px solid var(--border);}
+.add-btn:active{background:var(--bg);}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--card);border-radius:24px 24px 0 0;width:100%;max-width:500px;padding:20px 20px calc(20px + var(--safe-bottom));animation:slideUp .3s ease;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:5px;border-radius:3px;background:var(--border);margin:0 auto 14px;}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:14px;text-align:center;}
+.modal-input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font-size:15px;font-family:inherit;outline:none;margin-bottom:10px;}
+.modal-input:focus{border-color:var(--primary);}
+.modal-row{display:flex;gap:10px;margin-bottom:10px;}
+.modal-row .modal-input{flex:1;margin-bottom:0;}
+.modal-select{flex:1;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font-size:15px;font-family:inherit;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23b08868' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;}
+.modal-btns{display:flex;gap:10px;margin-top:6px;}
+.modal-btn{flex:1;padding:12px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;}
+.modal-btn.cancel{background:var(--bg);color:var(--text-secondary);}
+.modal-btn.confirm{background:var(--primary);color:white;}
+.modal-btn:active{opacity:.7;}
+
+.toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:rgba(45,26,14,.9);color:white;padding:10px 22px;border-radius:20px;font-size:14px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.show{opacity:1;}
+.section-title-row{padding:0 24px 12px;}
+.section-title-row h2{font-size:18px;font-weight:800;}
+
+/* Viral */
+.viral-card{margin:0 24px 16px;background:var(--card);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow);}
+.viral-card-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.viral-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--primary-light),var(--primary-dark));color:white;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;}
+.viral-account{flex:1;}
+.viral-name{font-size:15px;font-weight:700;}
+.viral-level{font-size:11px;color:var(--primary);font-weight:600;background:var(--primary-bg);padding:2px 8px;border-radius:6px;display:inline-block;margin-top:2px;}
+.viral-video-title{font-size:15px;font-weight:600;margin-bottom:8px;line-height:1.4;}
+.viral-video-title a{color:var(--primary);text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:opacity .15s;}
+.viral-video-title a:active{opacity:.7;}
+.viral-video-title .play-icon{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-bg);color:var(--primary);flex-shrink:0;font-size:12px;margin-right:6px;}
+.viral-video-title .link-badge{font-size:10px;color:var(--primary);font-weight:600;background:var(--primary-bg);padding:2px 8px;border-radius:6px;white-space:nowrap;}
+.viral-metrics{display:flex;gap:10px;margin-bottom:8px;font-size:12px;color:var(--text-secondary);flex-wrap:wrap;}
+.viral-metrics span{display:flex;align-items:center;gap:2px;}
+.viral-metrics .hot{color:var(--primary);font-weight:700;}
+.viral-metrics .good{color:var(--orange);font-weight:600;}
+.viral-desc{font-size:13px;color:var(--text);line-height:1.5;margin-bottom:8px;}
+.viral-analysis{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text-secondary);line-height:1.7;}
+.viral-analysis strong{color:var(--text);}
+.viral-analysis .highlight{color:var(--primary);font-weight:600;}
+.viral-analysis .good-text{color:var(--green);font-weight:600;}
+.viral-actions{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.viral-action-btn{flex:1;padding:8px;border:1.5px solid var(--border);border-radius:10px;background:none;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-secondary);}
+.viral-action-btn:active{background:var(--bg);}
+.viral-action-btn.primary{color:var(--primary);border-color:rgba(249,115,22,.3);}
+.viral-refresh-hint{text-align:center;color:var(--text-secondary);font-size:12px;padding:8px 24px 20px;line-height:1.6;}
+.loading-spinner{text-align:center;padding:40px;color:var(--text-secondary);}
+.loading-spinner .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Monthly */
+.month-picker{display:flex;align-items:center;justify-content:center;gap:16px;padding:12px 24px 14px;}
+.month-picker-btn{width:36px;height:36px;border-radius:50%;border:none;background:var(--card);color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow);}
+.month-picker-btn:active{transform:scale(.9);}
+.month-picker-label{font-size:20px;font-weight:800;min-width:140px;text-align:center;}
+.month-progress-ring{display:flex;align-items:center;justify-content:center;padding:16px;margin:0 24px 16px;background:var(--card);border-radius:20px;box-shadow:var(--shadow);}
+.ring-container{position:relative;width:120px;height:120px;}
+.ring-container svg{transform:rotate(-90deg);width:120px;height:120px;}
+.ring-bg{fill:none;stroke:var(--border);stroke-width:9;}
+.ring-fg{fill:none;stroke:var(--primary);stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset .6s ease;}
+.ring-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ring-value{font-size:32px;font-weight:800;letter-spacing:-1px;}
+.ring-label{font-size:12px;color:var(--text-secondary);margin-top:2px;}
+.month-stats-row{flex:1;display:flex;flex-direction:column;gap:6px;padding-left:14px;}
+.month-stat-item{display:flex;align-items:center;gap:6px;font-size:13px;}
+.month-stat-dot{width:8px;height:8px;border-radius:50%;}
+.month-stat-dot.daily{background:var(--primary);}
+.month-stat-dot.english{background:var(--blue);}
+.month-stat-dot.fitness{background:var(--orange);}
+.month-stat-count{font-weight:700;margin-left:auto;}
+
+.month-goal-section{margin:0 24px 16px;background:var(--card);border-radius:18px;overflow:hidden;box-shadow:var(--shadow);}
+.month-goal-header{padding:14px 18px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);}
+.month-goal-title{font-size:15px;font-weight:700;flex:1;}
+.month-goal-count{font-size:12px;color:var(--text-secondary);}
+.month-goal-item{display:flex;align-items:center;padding:12px 18px;gap:10px;border-bottom:1px solid var(--border);}
+.month-goal-item:last-child{border-bottom:none;}
+.month-goal-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;font-size:13px;color:transparent;}
+.month-goal-check.checked{background:var(--primary);border-color:var(--primary);color:white;}
+.month-goal-content{flex:1;}
+.month-goal-text{font-size:14px;font-weight:500;}
+.month-goal-text.checked{text-decoration:line-through;color:var(--text-secondary);}
+.month-goal-delete{width:26px;height:26px;border:none;background:none;color:var(--text-secondary);font-size:15px;opacity:.4;cursor:pointer;}
+.month-goal-delete:active{opacity:1;}
+.month-section-status{font-size:11px;padding:3px 9px;border-radius:10px;font-weight:600;}
+.month-section-status.done{background:var(--green-bg);color:var(--green);}
+.month-section-status.partial{background:var(--orange-bg);color:var(--orange);}
+.month-section-status.pending{background:rgba(180,136,104,.1);color:var(--text-secondary);}
+
+/* Thoughts */
+.thoughts-card{margin:0 24px 14px;background:var(--card);border-radius:16px;padding:14px 18px;box-shadow:var(--shadow);cursor:pointer;}
+.thoughts-card .date{font-size:12px;color:var(--text-secondary);margin-bottom:6px;}
+.thoughts-card .content{font-size:14px;line-height:1.6;color:var(--text);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.notes-area{width:100%;min-height:70px;padding:14px 18px;border:none;background:var(--card);border-radius:18px;font-size:14px;font-family:inherit;color:var(--text);resize:vertical;outline:none;box-shadow:var(--shadow);line-height:1.6;}
+.notes-area::placeholder{color:var(--text-secondary);}
+
+/* Settings */
+.settings-group{margin:0 24px 16px;background:var(--card);border-radius:18px;overflow:hidden;box-shadow:var(--shadow);}
+.settings-item{display:flex;align-items:center;padding:14px 18px;gap:10px;border-bottom:1px solid var(--border);}
+.settings-item:last-child{border-bottom:none;}
+.settings-label{flex:1;font-size:14px;}
+.toggle{width:49px;height:29px;border-radius:15px;background:var(--border);position:relative;cursor:pointer;transition:background .2s;border:none;flex-shrink:0;}
+.toggle.on{background:var(--green);}
+.toggle::after{content:'';position:absolute;width:25px;height:25px;border-radius:50%;background:white;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.toggle.on::after{transform:translateX(20px);}
+.danger-btn{display:block;width:calc(100% - 48px);margin:20px auto;padding:12px;border:none;border-radius:12px;background:var(--red-bg);color:var(--red);font-size:15px;font-weight:600;cursor:pointer;}
+.app-info{text-align:center;color:var(--text-secondary);font-size:12px;padding:20px;line-height:1.8;}
+.empty{text-align:center;padding:30px 16px;color:var(--text-secondary);}
+.empty-icon{font-size:40px;margin-bottom:10px;}
+.empty-text{font-size:14px;}
+
+@media(max-width:768px){
+:root{--sidebar-w:0px;}
+.sidebar{transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:150;width:260px;}
+.sidebar.open{transform:translateX(0);}
+.sidebar-overlay{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:140;opacity:0;pointer-events:none;transition:opacity .3s;}
+.sidebar-overlay.show{opacity:1;pointer-events:auto;}
+.main-area{margin-left:0;}
+.header{padding-left:16px;padding-right:16px;}
+.menu-toggle{display:flex;}
+.date-bar{padding:0 16px 14px;}
+.stats-row{padding:0 16px 18px;}
+.section,.viral-card,.month-progress-ring,.month-goal-section,.thoughts-card,.settings-group{margin-left:16px;margin-right:16px;}
+.month-picker{padding:12px 16px 14px;}
+.danger-btn{width:calc(100% - 32px);}
+.section-title-row{padding:0 16px 12px;}
+}
+</style>
+</head>
+<body>
+<div class="app-wrap">
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="cs()"></div>
+<nav class="sidebar" id="sidebar">
+<div class="sidebar-logo">🍊 自律日记</div>
+<div class="sidebar-section">日常打卡</div>
+<button class="sidebar-item active" onclick="nv('daily')" id="sbDaily"><span class="si-icon">📋</span>每日计划</button>
+<button class="sidebar-item" onclick="nv('english')" id="sbEnglish"><span class="si-icon">🇬🇧</span>英语学习</button>
+<button class="sidebar-item" onclick="nv('fitness')" id="sbFitness"><span class="si-icon">🔥</span>减肥</button>
+<div class="sidebar-section">工具</div>
+<button class="sidebar-item" onclick="nv('viral')" id="sbViral"><span class="si-icon">🎬</span>爆款视频</button>
+<button class="sidebar-item" onclick="nv('monthly')" id="sbMonthly"><span class="si-icon">🎯</span>月度计划</button>
+<button class="sidebar-item" onclick="nv('thoughts')" id="sbThoughts"><span class="si-icon">💭</span>感想</button>
+<div class="sidebar-section">设置</div>
+<button class="sidebar-item" onclick="nv('settings')" id="sbSettings"><span class="si-icon">⚙️</span>设置</button>
+</nav>
+
+<main class="main-area">
+<div class="header">
+<div style="display:flex;align-items:center;gap:10px;">
+<button class="menu-toggle" onclick="ts()">☰</button>
+<h1 id="pageTitle">每日计划</h1>
+</div>
+<button class="icon-btn" onclick="tt()" id="themeBtn">🌙</button>
+</div>
+
+<!-- ===== 每日计划 Page ===== -->
+<div id="dailyPage" class="page active">
+<div class="date-bar" id="dailyDateBar"></div>
+<div class="stats-row" id="dailyStatsRow"></div>
+<div class="section" id="dailySection">
+<div class="section-header"><div class="section-icon daily">📋</div><div class="section-title">每日计划</div><div class="section-status" id="dailyStatus">—</div></div>
+<div class="section-body" id="dailyBody"></div>
+<div class="progress-bar"><div class="progress-fill daily" id="dailyProgress" style="width:0%"></div></div>
+<button class="add-btn" onclick="om('daily')">＋ 添加计划</button>
+</div>
+</div>
+
+<!-- ===== 英语学习 Page ===== -->
+<div id="englishPage" class="page">
+<div class="date-bar" id="englishDateBar"></div>
+<div class="stats-row" id="englishStatsRow"></div>
+<div class="section" id="englishSection">
+<div class="section-header"><div class="section-icon english">🇬🇧</div><div class="section-title">英语学习</div><div class="section-status" id="englishStatus">—</div></div>
+<div class="section-body" id="englishBody"></div>
+<div class="progress-bar"><div class="progress-fill english" id="englishProgress" style="width:0%"></div></div>
+<button class="add-btn" onclick="om('english')">＋ 添加英语项</button>
+</div>
+</div>
+
+<!-- ===== 减肥 Page ===== -->
+<div id="fitnessPage" class="page">
+<div class="date-bar" id="fitnessDateBar"></div>
+<div class="stats-row" id="fitnessStatsRow"></div>
+<div class="section" id="fitnessSection">
+<div class="section-header"><div class="section-icon fitness">🔥</div><div class="section-title">减肥</div><div class="section-status" id="fitnessStatus">—</div></div>
+<div class="section-body" id="fitnessBody"></div>
+<div class="progress-bar"><div class="progress-fill fitness" id="fitnessProgress" style="width:0%"></div></div>
+<button class="add-btn" onclick="om('fitness')">＋ 添加减肥项</button>
+</div>
+</div>
+
+<!-- Viral Page -->
+<div id="viralPage" class="page">
+<div class="section-title-row"><h2>🎬 爆款视频</h2></div>
+<div id="viralTrendPanel"><div class="loading-spinner"><div class="spinner"></div>加载中...</div></div>
+<div class="viral-refresh-hint">💡 点击视频标题或 ▶ 按钮跳转抖音查看完整视频<br>数据更新：<span id="viralUpdateTime">—</span></div>
+</div>
+
+<!-- Monthly Page -->
+<div id="monthlyPage" class="page">
+<div class="month-picker">
+<button class="month-picker-btn" onclick="pm()">‹</button>
+<div class="month-picker-label" id="monthLabel">2025年7月</div>
+<button class="month-picker-btn" onclick="nm()">›</button>
+</div>
+<div class="month-progress-ring">
+<div class="ring-container">
+<svg viewBox="0 0 120 120"><circle class="ring-bg" cx="60" cy="60" r="50"/><circle class="ring-fg" id="monthRingFg" cx="60" cy="60" r="50" stroke-dasharray="314.159" stroke-dashoffset="314.159"/></svg>
+<div class="ring-text"><div class="ring-value" id="monthRate">0%</div><div class="ring-label">月度完成</div></div>
+</div>
+<div class="month-stats-row">
+<div class="month-stat-item"><div class="month-stat-dot daily"></div><span>每日计划</span><span class="month-stat-count" id="monthDailyCount">0天</span></div>
+<div class="month-stat-item"><div class="month-stat-dot english"></div><span>英语学习</span><span class="month-stat-count" id="monthEnglishCount">0天</span></div>
+<div class="month-stat-item"><div class="month-stat-dot fitness"></div><span>减肥</span><span class="month-stat-count" id="monthFitnessCount">0天</span></div>
+</div>
+</div>
+<div class="month-goal-section">
+<div class="month-goal-header"><span style="font-size:20px;">🎯</span><div class="month-goal-title">每月计划</div><div class="month-goal-count" id="monthGoalCount">0项</div><div class="month-section-status pending" id="monthGoalStatus">待开始</div></div>
+<div class="section-body" id="monthGoalBody"></div>
+<button class="add-btn" onclick="omm()">＋ 添加月度事项</button>
+</div>
+</div>
+
+<!-- Thoughts Page -->
+<div id="thoughtsPage" class="page">
+<div class="section-title-row"><h2>💭 今日感想</h2></div>
+<textarea class="notes-area" id="thoughtsArea" placeholder="写下今天的感想、复盘、灵感和收获..." onblur="stt2()" style="min-height:200px;"></textarea>
+<div class="section-title-row" style="margin-top:14px;"><h2>📜 历史感想</h2></div>
+<div id="thoughtsHistory"></div>
+</div>
+
+<!-- Settings Page -->
+<div id="settingsPage" class="page">
+<div class="section-title-row"><h2>设置</h2></div>
+<div class="settings-group">
+<div class="settings-item"><span style="font-size:20px;">🌙</span><span class="settings-label">深色模式</span><button class="toggle" id="darkToggle" onclick="tt()"></button></div>
+<div class="settings-item"><span style="font-size:20px;">🔔</span><span class="settings-label">每日提醒</span><button class="toggle" id="reminderToggle" onclick="toggleReminder()"></button></div>
+</div>
+<div class="settings-group">
+<div class="settings-item" onclick="exd()" style="cursor:pointer;"><span style="font-size:20px;">📤</span><span class="settings-label">导出数据</span><span style="color:var(--text-secondary);font-size:18px;">›</span></div>
+<div class="settings-item" onclick="imd()" style="cursor:pointer;"><span style="font-size:20px;">📥</span><span class="settings-label">导入数据</span><span style="color:var(--text-secondary);font-size:18px;">›</span></div>
+</div>
+<button class="danger-btn" onclick="cad()">清除所有数据</button>
+<div class="app-info">🍊 自律日记 v2.4<br>逝者如斯夫，不舍昼夜</div>
+</div>
+</main>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="modalOverlay">
+<div class="modal">
+<div class="modal-handle"></div>
+<div class="modal-title" id="modalTitle">添加项目</div>
+<input type="text" class="modal-input" id="modalName" placeholder="项目名称" maxlength="30">
+<div class="modal-row">
+<select class="modal-select" id="modalType"><option value="check">打卡模式</option><option value="progress">进度模式</option></select>
+<input type="number" class="modal-input" id="modalTarget" placeholder="目标值" min="1" style="display:none;">
+</div>
+<input type="text" class="modal-input" id="modalUnit" placeholder="单位（如：分钟、个）" style="display:none;" maxlength="10">
+<div class="modal-btns"><button class="modal-btn cancel" onclick="cm()">取消</button><button class="modal-btn confirm" onclick="ag()">添加</button></div>
+</div>
+</div>
+
+<!-- Monthly Modal -->
+<div class="modal-overlay" id="monthlyModalOverlay">
+<div class="modal">
+<div class="modal-handle"></div>
+<div class="modal-title">添加月度事项</div>
+<input type="text" class="modal-input" id="monthlyModalName" placeholder="事项名称" maxlength="30">
+<div class="modal-row">
+<select class="modal-select" id="monthlyModalType"><option value="check">打卡模式</option><option value="progress">进度模式</option></select>
+<input type="number" class="modal-input" id="monthlyModalTarget" placeholder="目标值" min="1" style="display:none;">
+</div>
+<input type="text" class="modal-input" id="monthlyModalUnit" placeholder="单位（如：次、本、小时）" style="display:none;" maxlength="10">
+<div class="modal-btns"><button class="modal-btn cancel" onclick="cmm()">取消</button><button class="modal-btn confirm" onclick="amg()">添加</button></div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const K='sd_v3',CATS=['daily','english','fitness'];
+let S={theme:'light',reminder:!1,currentDate:fd(new Date()),currentMonth:fm(new Date()),data:{},monthlyGoals:{},thoughts:{},viralVideos:[]};
+let mcat='daily',vtd=[];
+function fd(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function fm(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
+function ld(){try{const s=localStorage.getItem(K);if(s)S={...S,...JSON.parse(s)}}catch(e){}}
+function sd(){localStorage.setItem(K,JSON.stringify(S))}
+function gd(dt){if(!S.data[dt]){S.data[dt]={};CATS.forEach(c=>{S.data[dt][c]=[]})}return S.data[dt]}
+function hd(dd,cat){return (dd[cat]||[]).some(g=>g.done||(g.target&&g.current>0))}
+function eh(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+
+function at(){document.documentElement.setAttribute('data-theme',S.theme);document.getElementById('themeBtn').textContent=S.theme==='dark'?'☀️':'🌙';const t=document.getElementById('darkToggle');if(t)t.classList.toggle('on',S.theme==='dark')}
+function tt(){S.theme=S.theme==='dark'?'light':'dark';at();sd()}
+function tr(){S.reminder=!S.reminder;document.getElementById('reminderToggle').classList.toggle('on',S.reminder);sd();st(S.reminder?'已开启提醒':'已关闭提醒')}
+
+function ts(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('show')}
+function cs(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('show')}
+function nv(p){sp(p);cs()}
+
+function sp(p){
+['daily','english','fitness','viral','monthly','thoughts','settings'].forEach(x=>{document.getElementById(x+'Page').classList.toggle('active',x===p)});
+const sbid='sb'+p.charAt(0).toUpperCase()+p.slice(1);
+['daily','english','fitness','viral','monthly','thoughts','settings'].forEach(x=>{const e=document.getElementById('sb'+x.charAt(0).toUpperCase()+x.slice(1));if(e)e.classList.toggle('active',x===p)});
+const titles={daily:'每日计划',english:'英语学习',fitness:'减肥',viral:'爆款视频',monthly:'月度计划',thoughts:'感想',settings:'设置'};
+document.getElementById('pageTitle').textContent=titles[p];
+if(['daily','english','fitness'].includes(p)){
+rdb(p);rss(p);rs(p)
+}else if(p==='viral')rv();else if(p==='monthly')rm();else if(p==='thoughts')rt();
+if(p==='settings'){document.getElementById('darkToggle').classList.toggle('on',S.theme==='dark');document.getElementById('reminderToggle').classList.toggle('on',S.reminder)}
+window.scrollTo(0,0)
+}
+
+function rdb(page){
+const bar=document.getElementById(page+'DateBar');bar.innerHTML='';const td=new Date(),wd=['日','一','二','三','四','五','六'];
+for(let i=6;i>=0;i--){const d=new Date(td);d.setDate(d.getDate()-i);const ds=fd(d);const ch=document.createElement('div');ch.className='date-chip';if(ds===S.currentDate)ch.classList.add('active');if(S.data[ds]&&hd(S.data[ds],page))ch.classList.add('has-data');ch.innerHTML=`<div class="weekday">${wd[d.getDay()]}</div>${d.getDate()}`;ch.onclick=()=>{S.currentDate=ds;sd();ra(page)};bar.appendChild(ch)}
+}
+
+function rss(page){
+const row=document.getElementById(page+'StatsRow');row.innerHTML='';let sk=0;const td=new Date();
+for(let i=0;i<365;i++){const d=new Date(td);d.setDate(d.getDate()-i);if(S.data[fd(d)]&&hd(S.data[fd(d)],page))sk++;else if(i>0)break}
+const dd=gd(S.currentDate),gls=dd[page]||[];
+const dn=gls.filter(g=>g.done||(g.target&&g.current>=g.target)).length;
+const rate=gls.length?Math.round(dn/gls.length*100):0;
+const labels={daily:'每日计划',english:'英语学习',fitness:'减肥'};
+row.innerHTML=`<div class="stat-card streak"><div class="label">🔥 连续打卡</div><div class="value">${sk}<span class="unit">天</span></div><div class="sub">坚持就是胜利</div></div><div class="stat-card rate"><div class="label">✅ 今日完成</div><div class="value">${rate}<span class="unit">%</span></div><div class="sub">${dn}/${gls.length} 项</div></div><div class="stat-card"><div class="label">📋 ${labels[page]}累计</div><div class="value">${sk}<span class="unit">天</span></div><div class="sub">自律成就自由</div></div>`
+}
+
+function rs(cat){
+const dd=gd(S.currentDate),gls=dd[cat]||[];
+const bd=document.getElementById(cat+'Body'),stt=document.getElementById(cat+'Status'),pr=document.getElementById(cat+'Progress');
+bd.innerHTML='';
+if(!gls.length){bd.innerHTML='<div class="empty"><div class="empty-icon">📝</div><div class="empty-text">还没有项目</div></div>';stt.textContent='未设置';stt.className='section-status pending';pr.style.width='0%';return}
+const dn=gls.filter(g=>g.done||(g.target&&g.current>=g.target)).length,pct=Math.round(dn/gls.length*100);
+if(dn===gls.length){stt.textContent='已完成';stt.className='section-status done'}else if(dn>0){stt.textContent=`${dn}/${gls.length}`;stt.className='section-status partial'}else{stt.textContent='待开始';stt.className='section-status pending'}
+pr.style.width=pct+'%';
+gls.forEach((g,idx)=>{const isD=g.done||(g.target&&g.current>=g.target);const it=document.createElement('div');it.className='goal-item';
+if(g.type==='progress'){it.innerHTML=`<div class="goal-check ${isD?'checked':''}" onclick="tpd('${cat}',${idx})">${isD?'✓':''}</div><div class="goal-content"><div class="goal-text ${isD?'checked':''}">${eh(g.name)}</div><div class="goal-meta">目标 ${g.target} ${g.unit||''}</div></div><div class="goal-progress"><input type="number" class="progress-input" value="${g.current||0}" min="0" onblur="up('${cat}',${idx},this.value)" onclick="this.select()"><span class="progress-unit">/ ${g.target} ${g.unit||''}</span></div><button class="goal-delete" onclick="dg('${cat}',${idx})">✕</button>`}
+else{it.innerHTML=`<div class="goal-check ${g.done?'checked':''}" onclick="tc('${cat}',${idx})">${g.done?'✓':''}</div><div class="goal-content"><div class="goal-text ${g.done?'checked':''}">${eh(g.name)}</div></div><button class="goal-delete" onclick="dg('${cat}',${idx})">✕</button>`}
+bd.appendChild(it)})
+}
+function tc(cat,idx){gd(S.currentDate)[cat][idx].done=!gd(S.currentDate)[cat][idx].done;sd();ra(cat)}
+function tpd(cat,idx){const g=gd(S.currentDate)[cat][idx];g.current=(g.current>=g.target)?0:g.target;sd();ra(cat)}
+function up(cat,idx,val){gd(S.currentDate)[cat][idx].current=Math.max(0,parseInt(val)||0);sd();ra(cat)}
+function dg(cat,idx){if(!confirm('确定删除？'))return;gd(S.currentDate)[cat].splice(idx,1);sd();ra(cat)}
+
+function om(cat){mcat=cat;const t={daily:'添加每日计划',english:'添加英语学习',fitness:'添加减肥项'};document.getElementById('modalTitle').textContent=t[cat];document.getElementById('modalName').value='';document.getElementById('modalTarget').value='';document.getElementById('modalUnit').value='';document.getElementById('modalType').value='check';tmf();document.getElementById('modalOverlay').classList.add('show');setTimeout(()=>document.getElementById('modalName').focus(),300)}
+function cm(){document.getElementById('modalOverlay').classList.remove('show')}
+function tmf(){const t=document.getElementById('modalType').value;document.getElementById('modalTarget').style.display=t==='progress'?'block':'none';document.getElementById('modalUnit').style.display=t==='progress'?'block':'none'}
+document.getElementById('modalType').onchange=tmf;
+function ag(){const n=document.getElementById('modalName').value.trim();if(!n){st('请输入名称');return}const g={name:n,type:document.getElementById('modalType').value,done:!1};if(g.type==='progress'){g.target=parseInt(document.getElementById('modalTarget').value)||1;g.current=0;g.unit=document.getElementById('modalUnit').value.trim()}gd(S.currentDate)[mcat].push(g);sd();cm();ra(mcat);st('已添加 ✓')}
+
+function stt2(){const d=S.currentDate;if(!S.thoughts[d])S.thoughts[d]='';S.thoughts[d]=document.getElementById('thoughtsArea').value;sd()}
+function rt(){document.getElementById('thoughtsArea').value=S.thoughts[S.currentDate]||'';const h=document.getElementById('thoughtsHistory');const ds=Object.keys(S.thoughts).sort().reverse().filter(d=>d!==S.currentDate&&S.thoughts[d].trim());h.innerHTML='';if(!ds.length){h.innerHTML='<div class="empty"><div class="empty-icon">📜</div><div class="empty-text">还没有历史感想</div></div>';return}ds.forEach(d=>{const c=document.createElement('div');c.className='thoughts-card';c.innerHTML=`<div class="date">${d}</div><div class="content">${eh(S.thoughts[d])}</div>`;c.onclick=()=>{S.currentDate=d;sd();sp('thoughts');rt()};h.appendChild(c)})}
+
+// ===== VIRAL =====
+function openDouyin(url){
+const ua=navigator.userAgent.toLowerCase();
+const isIOS=/iphone|ipad|ipod/.test(ua);
+const isAndroid=/android/.test(ua);
+if(isIOS||isAndroid){
+if(isIOS){window.location.href='snssdk1128://'}
+else{const iframe=document.createElement('iframe');iframe.style.display='none';iframe.src='snssdk1128://';document.body.appendChild(iframe);setTimeout(()=>document.body.removeChild(iframe),2000)}
+setTimeout(()=>{window.open(url,'_blank')},800)
+}else{window.open(url,'_blank')}
+}
+
+function fvt(){
+const cache=localStorage.getItem('vtCache');if(cache){const p=JSON.parse(cache);if(Date.now()-p.time<216e5){vtd=p.data;rvt();document.getElementById('viralUpdateTime').textContent=new Date(p.time).toLocaleString('zh-CN');return}}
+vtd=gmt();localStorage.setItem('vtCache',JSON.stringify({time:Date.now(),data:vtd}));document.getElementById('viralUpdateTime').textContent=new Date().toLocaleString('zh-CN');rvt()
+}
+function gmt(){
+const acs=[{name:'鲜果日记',level:'LV1',avatar:'🍎'},{name:'水果猎人',level:'LV1',avatar:'🍊'},{name:'果然鲜',level:'LV1',avatar:'🍇'},{name:'果园直发',level:'LV1',avatar:'🍑'},{name:'生鲜优选',level:'LV1',avatar:'🥝'}];
+return [
+{id:'t1',title:'当季荔枝开箱｜颗颗爆汁',url:'https://www.douyin.com/search/%E7%94%9F%E9%B2%9C%E8%8D%94%E6%9E%9D%E5%BC%80%E7%AE%B1?type=general',likes:'1.2w',comments:'586',shares:'1.8k',orders:'2300+',desc:'源头果园直发，果肉晶莹剔透，甜度测试超22度！',analysis:'<strong>爆款分析：</strong><br>① 开箱类视频代入感强，<span class="highlight">前3秒展示荔枝特写</span>抓住眼球<br>② 源头产地背景增强信任感，果园直发标签转化率高<br>③ <span class="good-text">评论区置顶购买链接</span>，出单2300+<br>④ 混剪节奏：近景特写→果肉展示→打包发货，<span class="highlight">15-20秒完播率最高</span><br>💡 <strong>可借鉴：</strong>用同样结构拍当季水果，突出产地新鲜',account:acs[0],date:fd(new Date()),source:'trend'},
+{id:'t2',title:'榴莲盲盒挑战｜开5个能回本吗',url:'https://www.douyin.com/search/%E6%A6%B4%E8%8E%B2%E7%9B%B2%E7%9B%92%E6%8C%91%E6%88%98?type=general',likes:'3.6w',comments:'2.1k',shares:'5.6k',orders:'4800+',desc:'超市200块一个的榴莲到底值不值？全程真实记录！',analysis:'<strong>爆款分析：</strong><br>① 盲盒/挑战类内容<span class="highlight">悬念感极强</span>，完播率高达65%<br>② 评论区热议值不值，<span class="good-text">互动率超高带动推荐</span><br>③ 结尾引导激发评论，<span class="highlight">评论数是关键权重</span><br>④ 出单4800+，榴莲客单价高，佣金可观<br>💡 <strong>可借鉴：</strong>做应季高价水果的开箱测评，用真实感赢得信任',account:acs[1],date:fd(new Date()),source:'trend'},
+{id:'t3',title:'拼多多vs超市｜同样水果价格差3倍',url:'https://www.douyin.com/search/%E6%B0%B4%E6%9E%9C%E4%BB%B7%E6%A0%BC%E5%AF%B9%E6%AF%94?type=general',likes:'2.8w',comments:'3.4k',shares:'4.2k',orders:'1800+',desc:'同款阳光玫瑰，价格差这么多？真相让人意外！',analysis:'<strong>爆款分析：</strong><br>① 对比类内容<span class="highlight">天然有话题性</span>，评论区争议=流量<br>② 价格差3倍标题党效果明显，<span class="good-text">点击率提升40%</span><br>③ 出单1800+但转化率一般，<span class="highlight">建议加强限时优惠话术</span><br>④ 混剪要点：左右分屏对比更有冲击力<br>💡 <strong>可借鉴：</strong>多平台比价是生鲜带货的流量密码',account:acs[2],date:fd(new Date()),source:'trend'},
+{id:'t4',title:'早上摘下午到｜荔枝从树到桌6小时',url:'https://www.douyin.com/search/%E6%B0%B4%E6%9E%9C%E5%86%B7%E9%93%BE%E7%A9%BA%E8%BF%90?type=general',likes:'1.8w',comments:'892',shares:'2.1k',orders:'3500+',desc:'广东桂味荔枝，冷链空运，打开箱子还有凉气！',analysis:'<strong>爆款分析：</strong><br>① 供应链展示类，<span class="highlight">6小时概念建立时效信任</span><br>② 冷链包装特写打消水果会坏的顾虑，<span class="good-text">转化率极高</span><br>③ 出单3500+且退货率低，说明产品力+内容力双在线<br>④ 混剪节奏：采摘→分拣→打包→开箱，<span class="highlight">完整链路更有说服力</span><br>💡 <strong>可借鉴：</strong>突出自家供应链优势，这是LV0-LV1的核心竞争力',account:acs[3],date:fd(new Date()),source:'trend'},
+{id:'t5',title:'水果店老板不会告诉你的挑水果秘诀',url:'https://www.douyin.com/search/%E6%8C%91%E6%B0%B4%E6%9E%9C%E7%A7%98%E8%AF%80%E6%95%99%E7%A8%8B?type=general',likes:'5.2w',comments:'1.8k',shares:'8.9k',orders:'1200+',desc:'西瓜、芒果、山竹怎么挑？十年果贩经验全分享！',analysis:'<strong>爆款分析：</strong><br>① 干货教程类<span class="highlight">收藏率极高</span>，长尾流量持续推荐<br>② 5.2w赞但出单仅1200+，<span class="good-text">说明内容好但带货属性弱</span><br>③ 建议在教程中植入产品链接，<span class="highlight">看完就会挑，想买直接点</span><br>④ 这类内容适合涨粉阶段，LV0→LV1优先做此类<br>💡 <strong>可借鉴：</strong>先做教程涨粉到LV1，再转型带货混剪',account:acs[4],date:fd(new Date()),source:'trend'}
+]}
+function rvt(){
+const pn=document.getElementById('viralTrendPanel');
+if(!vtd.length){pn.innerHTML='<div class="viral-trend-empty"><div class="empty-icon">🔍</div><p>正在获取生鲜水果带货热点...</p><button class="btn" onclick="fvt()">🔄 刷新数据</button></div>';return}
+let h='';
+vtd.forEach(v=>{const a=v.account;h+=`
+<div class="viral-card">
+<div class="viral-card-header"><div class="viral-avatar">${a.avatar}</div><div class="viral-account"><div class="viral-name">${a.name}</div><div class="viral-level">${a.level} · 生鲜水果带货</div></div></div>
+<div class="viral-video-title"><a href="javascript:void(0)" onclick="openDouyin('${v.url}')"><span class="play-icon">▶</span>${v.title}<span class="link-badge">📱 打开抖音</span></a></div>
+<div class="viral-metrics"><span>👍 <span class="hot">${v.likes}</span></span><span>💬 <span class="good">${v.comments}</span></span><span>↗️ ${v.shares}</span><span>📦 <span class="hot">${v.orders}</span></span></div>
+<div class="viral-desc">${v.desc}</div>
+<div class="viral-analysis">${v.analysis}</div>
+<div class="viral-actions"><button class="viral-action-btn primary" onclick="openDouyin('${v.url}')">📱 去抖音看</button><button class="viral-action-btn" onclick="sv('${v.id}')">💾 收藏</button></div>
+</div>`});
+h+='<div style="text-align:center;padding:8px;"><button class="viral-submit" style="width:auto;padding:10px 32px;" onclick="rft()">🔄 刷新热点数据</button></div>';
+pn.innerHTML=h;document.getElementById('viralUpdateTime').textContent=new Date().toLocaleString('zh-CN')
+}
+function rft(){localStorage.removeItem('vtCache');document.getElementById('viralTrendPanel').innerHTML='<div class="loading-spinner"><div class="spinner"></div>获取最新热点...</div>';setTimeout(()=>fvt(),800)}
+function sv(tid){const t=vtd.find(v=>v.id===tid);if(!t)return;if(S.viralVideos.find(v=>v.id===tid)){st('已收藏过了');return}S.viralVideos.push({...t,date:fd(new Date()),source:'saved'});sd();st('已收藏 ✓')}
+function rv(){fvt()}
+
+// ===== MONTHLY =====
+function gmg(m){if(!S.monthlyGoals[m])S.monthlyGoals[m]=[];return S.monthlyGoals[m]}
+function pm(){const[y,m]=S.currentMonth.split('-').map(Number);S.currentMonth=fm(new Date(y,m-2,1));sd();rm()}
+function nm(){const[y,m]=S.currentMonth.split('-').map(Number);S.currentMonth=fm(new Date(y,m,1));sd();rm()}
+function omm(){document.getElementById('monthlyModalName').value='';document.getElementById('monthlyModalTarget').value='';document.getElementById('monthlyModalUnit').value='';document.getElementById('monthlyModalType').value='check';tmmf();document.getElementById('monthlyModalOverlay').classList.add('show');setTimeout(()=>document.getElementById('monthlyModalName').focus(),300)}
+function cmm(){document.getElementById('monthlyModalOverlay').classList.remove('show')}
+function tmmf(){const t=document.getElementById('monthlyModalType').value;document.getElementById('monthlyModalTarget').style.display=t==='progress'?'block':'none';document.getElementById('monthlyModalUnit').style.display=t==='progress'?'block':'none'}
+document.getElementById('monthlyModalType').onchange=tmmf;
+function amg(){const n=document.getElementById('monthlyModalName').value.trim();if(!n){st('请输入事项名称');return}const g={name:n,type:document.getElementById('monthlyModalType').value,done:!1};if(g.type==='progress'){g.target=parseInt(document.getElementById('monthlyModalTarget').value)||1;g.current=0;g.unit=document.getElementById('monthlyModalUnit').value.trim()}gmg(S.currentMonth).push(g);sd();cmm();rm();st('已添加 ✓')}
+function tmc(idx){gmg(S.currentMonth)[idx].done=!gmg(S.currentMonth)[idx].done;sd();rm()}
+function tmpd(idx){const g=gmg(S.currentMonth)[idx];g.current=(g.current>=g.target)?0:g.target;sd();rm()}
+function ump(idx,val){gmg(S.currentMonth)[idx].current=Math.max(0,parseInt(val)||0);sd();rm()}
+function dmg(idx){if(!confirm('确定删除？'))return;gmg(S.currentMonth).splice(idx,1);sd();rm()}
+function rm(){
+const mn=S.currentMonth;[y,m]=mn.split('-').map(Number);document.getElementById('monthLabel').textContent=`${y}年${m}月`;
+const gls=gmg(mn),done=gls.filter(g=>g.done||(g.target&&g.current>=g.target)).length,rate=gls.length?Math.round(done/gls.length*100):0;
+const circ=314.159;document.getElementById('monthRingFg').setAttribute('stroke-dashoffset',circ-(circ*rate/100));document.getElementById('monthRate').textContent=rate+'%';
+const sel=document.getElementById('monthGoalStatus');document.getElementById('monthGoalCount').textContent=gls.length+'项';
+if(!gls.length){sel.textContent='待设置';sel.className='month-section-status pending'}else if(done===gls.length){sel.textContent='已完成';sel.className='month-section-status done'}else if(done>0){sel.textContent=`${done}/${gls.length}`;sel.className='month-section-status partial'}else{sel.textContent='待开始';sel.className='month-section-status pending'}
+const bd=document.getElementById('monthGoalBody');bd.innerHTML='';
+if(!gls.length){bd.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">设置本月要完成的事项</div></div>'}
+else{gls.forEach((g,idx)=>{const isD=g.done||(g.target&&g.current>=g.target);const it=document.createElement('div');it.className='month-goal-item';
+if(g.type==='progress'){it.innerHTML=`<div class="month-goal-check ${isD?'checked':''}" onclick="tmpd(${idx})">${isD?'✓':''}</div><div class="month-goal-content"><div class="month-goal-text ${isD?'checked':''}">${eh(g.name)}</div><div class="goal-meta">目标 ${g.target} ${g.unit||''}</div></div><div class="goal-progress"><input type="number" class="progress-input" value="${g.current||0}" min="0" onblur="ump(${idx},this.value)" onclick="this.select()"><span class="progress-unit">/ ${g.target} ${g.unit||''}</span></div><button class="month-goal-delete" onclick="dmg(${idx})">✕</button>`}
+else{it.innerHTML=`<div class="month-goal-check ${g.done?'checked':''}" onclick="tmc(${idx})">${g.done?'✓':''}</div><div class="month-goal-content"><div class="month-goal-text ${g.done?'checked':''}">${eh(g.name)}</div></div><button class="month-goal-delete" onclick="dmg(${idx})">✕</button>`}
+bd.appendChild(it)})}
+const dim=new Date(y,m,0).getDate(),cnt={daily:0,english:0,fitness:0};
+for(let d=1;d<=dim;d++){const ds=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`,dd=S.data[ds];if(dd){CATS.forEach(c=>{if((dd[c]||[]).some(g=>g.done||(g.target&&g.current>=g.target)))cnt[c]++})}}
+document.getElementById('monthDailyCount').textContent=cnt.daily+'天';document.getElementById('monthEnglishCount').textContent=cnt.english+'天';document.getElementById('monthFitnessCount').textContent=cnt.fitness+'天'
+}
+
+function exd(){const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`自律日记_${fd(new Date())}.json`;a.click();URL.revokeObjectURL(a.href);st('已导出')}
+function imd(){const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{S={...S,...JSON.parse(ev.target.result)};sd();ra('daily');st('导入成功')}catch(err){st('文件格式错误')}};r.readAsText(f)};i.click()}
+function cad(){if(!confirm('确定清除所有数据？此操作不可撤销！'))return;if(!confirm('再次确认！'))return;localStorage.removeItem(K);S={theme:S.theme,reminder:S.reminder,currentDate:fd(new Date()),currentMonth:fm(new Date()),data:{},monthlyGoals:{},thoughts:{},viralVideos:[]};sd();ra('daily');st('已清除')}
+
+function st(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+
+// ra() now takes a page argument to refresh the current module
+function ra(page){rdb(page);rss(page);rs(page)}
+
+ld();at();ra('daily');
+document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)cm()});
+document.getElementById('monthlyModalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)cmm()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){cm();cmm();cs()}if(e.key==='Enter'&&document.getElementById('modalOverlay').classList.contains('show')){if(document.activeElement.id!=='modalName')ag()}if(e.key==='Enter'&&document.getElementById('monthlyModalOverlay').classList.contains('show')){if(document.activeElement.id!=='monthlyModalName')amg()}});
+if('Notification' in window&&S.reminder){Notification.requestPermission()}
+</script>
+</body>
+</html>
