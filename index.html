@@ -578,8 +578,24 @@ const job=JOB_DATA.find(j=>j.id===jid);
 if(!job)return;
 if(!S.appliedJobs)S.appliedJobs=[];
 if(!S.appliedJobs.includes(jid)){S.appliedJobs.push(jid);sd()}
-window.open(job.url,'_blank');
-setTimeout(()=>rj(),500);
+const ua=navigator.userAgent.toLowerCase();
+const isIOS=/iphone|ipad|ipod/.test(ua);
+const isAndroid=/android/.test(ua);
+const bossScheme='bosszp://';
+if(isIOS){
+window.location.href=bossScheme;
+setTimeout(function(){window.open(job.url,'_blank')},1000)
+}else if(isAndroid){
+var iframe=document.createElement('iframe');
+iframe.style.display='none';
+iframe.src=bossScheme;
+document.body.appendChild(iframe);
+setTimeout(function(){document.body.removeChild(iframe)},2000);
+setTimeout(function(){window.open(job.url,'_blank')},1000)
+}else{
+window.open(job.url,'_blank')
+}
+setTimeout(function(){rj()},500)
 }
 function refreshJobs(){localStorage.removeItem('jobCache');document.getElementById('jobsPanel').innerHTML='<div class="loading-spinner"><div class="spinner"></div>刷新岗位中...</div>';localStorage.setItem('jobCache',JSON.stringify({time:Date.now()}));setTimeout(()=>rj(),600)}
 
