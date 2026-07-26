@@ -1,7 +1,7 @@
 {
-    "name": "自律日记",
-    "short_name": "自律日记",
-    "description": "每天记录工作、英语学习、减肥的自律打卡App",
+    "name": "云工作台",
+    "short_name": "云工作台",
+    "description": "每天记录工作、英语学习、减肥的云工作台",
     "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#fef7f0",

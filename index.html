@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="自律日记">
+<meta name="apple-mobile-web-app-title" content="云工作台">
 <meta name="theme-color" content="#f97316">
-<title>自律日记</title>
+<title>云工作台</title>
 <link rel="manifest" href="manifest.json">
 <style>
 :root{
@@ -280,7 +280,7 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 <div class="app-wrap">
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="cs()"></div>
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo">🍊 自律日记</div>
+<div class="sidebar-logo">🍊 云工作台</div>
 <div class="sidebar-section">日常打卡</div>
 <button class="sidebar-item active" onclick="nv('daily')" id="sbDaily"><span class="si-icon">📋</span>每日计划</button>
 <button class="sidebar-item" onclick="nv('english')" id="sbEnglish"><span class="si-icon">🇬🇧</span>英语学习</button>
@@ -391,7 +391,7 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 <div class="settings-item" onclick="imd()" style="cursor:pointer;"><span style="font-size:20px;">📥</span><span class="settings-label">导入数据</span><span style="color:var(--text-secondary);font-size:18px;">›</span></div>
 </div>
 <button class="danger-btn" onclick="cad()">清除所有数据</button>
-<div class="app-info">🍊 自律日记 v2.4<br>逝者如斯夫，不舍昼夜</div>
+<div class="app-info">🍊 云工作台 v2.6</div>
 </div>
 </main>
 </div>
@@ -577,7 +577,7 @@ for(let d=1;d<=dim;d++){const ds=`${y}-${String(m).padStart(2,'0')}-${String(d).
 document.getElementById('monthDailyCount').textContent=cnt.daily+'天';document.getElementById('monthEnglishCount').textContent=cnt.english+'天';document.getElementById('monthFitnessCount').textContent=cnt.fitness+'天'
 }
 
-function exd(){const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`自律日记_${fd(new Date())}.json`;a.click();URL.revokeObjectURL(a.href);st('已导出')}
+function exd(){const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`云工作台_${fd(new Date())}.json`;a.click();URL.revokeObjectURL(a.href);st('已导出')}
 function imd(){const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{S={...S,...JSON.parse(ev.target.result)};sd();ra('daily');st('导入成功')}catch(err){st('文件格式错误')}};r.readAsText(f)};i.click()}
 function cad(){if(!confirm('确定清除所有数据？此操作不可撤销！'))return;if(!confirm('再次确认！'))return;localStorage.removeItem(K);S={theme:S.theme,reminder:S.reminder,currentDate:fd(new Date()),currentMonth:fm(new Date()),data:{},monthlyGoals:{},thoughts:{},viralVideos:[],energy:{}};sd();ra('daily');st('已清除')}
 
