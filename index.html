@@ -167,6 +167,26 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 .section-title-row{padding:0 24px 12px;}
 .section-title-row h2{font-size:18px;font-weight:800;}
 
+/* Jobs */
+.jobs-filter-hint{padding:0 24px 14px;font-size:12px;color:var(--text-secondary);line-height:1.6;}
+.jobs-refresh-hint{text-align:center;color:var(--text-secondary);font-size:12px;padding:8px 24px 20px;line-height:1.6;}
+.job-card{margin:0 24px 14px;background:var(--card);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow);border:2px solid transparent;transition:all .2s;cursor:pointer;}
+.job-card:active{transform:scale(.98);}
+.job-card.applied{opacity:.5;border-color:var(--border);}
+.job-card.applied .job-title{color:var(--text-secondary);}
+.job-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:8px;}
+.job-title{font-size:16px;font-weight:700;flex:1;line-height:1.4;}
+.job-salary{font-size:16px;font-weight:800;color:var(--primary);white-space:nowrap;}
+.job-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+.job-tag{font-size:11px;padding:3px 8px;border-radius:6px;background:var(--bg);color:var(--text-secondary);font-weight:500;}
+.job-tag.hot{background:var(--primary-bg);color:var(--primary);}
+.job-tag.green{background:var(--green-bg);color:var(--green);}
+.job-tag.blue{background:var(--blue-bg);color:var(--blue);}
+.job-company{font-size:13px;color:var(--text-secondary);margin-bottom:4px;}
+.job-desc{font-size:13px;color:var(--text);line-height:1.6;margin-bottom:8px;}
+.job-time{font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:4px;}
+.job-applied-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:var(--green-bg);color:var(--green);font-weight:600;margin-left:8px;}
+
 /* Viral */
 .viral-card{margin:0 24px 16px;background:var(--card);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow);}
 .viral-card-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
@@ -286,6 +306,7 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 <button class="sidebar-item" onclick="nv('english')" id="sbEnglish"><span class="si-icon">🇬🇧</span>英语学习</button>
 <button class="sidebar-item" onclick="nv('fitness')" id="sbFitness"><span class="si-icon">🔥</span>减肥</button>
 <div class="sidebar-section">工具</div>
+<button class="sidebar-item" onclick="nv('jobs')" id="sbJobs"><span class="si-icon">💼</span>就业入职</button>
 <button class="sidebar-item" onclick="nv('viral')" id="sbViral"><span class="si-icon">🎬</span>爆款视频</button>
 <button class="sidebar-item" onclick="nv('monthly')" id="sbMonthly"><span class="si-icon">🎯</span>月度计划</button>
 <button class="sidebar-item" onclick="nv('thoughts')" id="sbThoughts"><span class="si-icon">💭</span>感想</button>
@@ -379,6 +400,14 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 <div id="thoughtsHistory"></div>
 </div>
 
+<!-- Jobs Page -->
+<div id="jobsPage" class="page">
+<div class="section-title-row"><h2>💼 就业入职</h2></div>
+<div class="jobs-filter-hint">🔍 筛选：小公司(0-99人) · 10-11点上班 · 16-25K · 五险一金</div>
+<div id="jobsPanel"><div class="loading-spinner"><div class="spinner"></div>加载岗位中...</div></div>
+<div class="jobs-refresh-hint">💡 点击岗位卡片跳转 Boss 直聘投递<br>已投递的岗位会变浅色，每 3 小时自动刷新<br>上次更新：<span id="jobsUpdateTime">—</span></div>
+</div>
+
 <!-- Settings Page -->
 <div id="settingsPage" class="page">
 <div class="section-title-row"><h2>设置</h2></div>
@@ -391,7 +420,7 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 <div class="settings-item" onclick="imd()" style="cursor:pointer;"><span style="font-size:20px;">📥</span><span class="settings-label">导入数据</span><span style="color:var(--text-secondary);font-size:18px;">›</span></div>
 </div>
 <button class="danger-btn" onclick="cad()">清除所有数据</button>
-<div class="app-info">🍊 云工作台 v2.6</div>
+<div class="app-info">🍊 云工作台 v2.8</div>
 </div>
 </main>
 </div>
@@ -429,7 +458,7 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 <div class="toast" id="toast"></div>
 <script>
 const K='sd_v3',CATS=['daily','english','fitness'];
-let S={theme:'light',reminder:!1,currentDate:fd(new Date()),currentMonth:fm(new Date()),data:{},monthlyGoals:{},thoughts:{},viralVideos:[],energy:{}};
+let S={theme:'light',reminder:!1,currentDate:fd(new Date()),currentMonth:fm(new Date()),data:{},monthlyGoals:{},thoughts:{},viralVideos:[],energy:{},appliedJobs:[]};
 let mcat='daily',vtd=[];
 function fd(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function fm(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
@@ -448,14 +477,14 @@ function cs(){document.getElementById('sidebar').classList.remove('open');docume
 function nv(p){sp(p);cs()}
 
 function sp(p){
-['daily','english','fitness','viral','monthly','thoughts','settings'].forEach(x=>{document.getElementById(x+'Page').classList.toggle('active',x===p)});
+['daily','english','fitness','viral','monthly','thoughts','jobs','settings'].forEach(x=>{document.getElementById(x+'Page').classList.toggle('active',x===p)});
 const sbid='sb'+p.charAt(0).toUpperCase()+p.slice(1);
-['daily','english','fitness','viral','monthly','thoughts','settings'].forEach(x=>{const e=document.getElementById('sb'+x.charAt(0).toUpperCase()+x.slice(1));if(e)e.classList.toggle('active',x===p)});
-const titles={daily:'每日计划',english:'英语学习',fitness:'减肥',viral:'爆款视频',monthly:'月度计划',thoughts:'感想',settings:'设置'};
+['daily','english','fitness','viral','monthly','thoughts','jobs','settings'].forEach(x=>{const e=document.getElementById('sb'+x.charAt(0).toUpperCase()+x.slice(1));if(e)e.classList.toggle('active',x===p)});
+const titles={daily:'每日计划',english:'英语学习',fitness:'减肥',viral:'爆款视频',monthly:'月度计划',thoughts:'感想',jobs:'就业入职',settings:'设置'};
 document.getElementById('pageTitle').textContent=titles[p];
 if(['daily','english','fitness'].includes(p)){
 renderEnergy();rdb(p);rss(p);rs(p)
-}else if(p==='viral')rv();else if(p==='monthly')rm();else if(p==='thoughts')rt();
+}else if(p==='viral')rv();else if(p==='monthly')rm();else if(p==='thoughts')rt();else if(p==='jobs')rj();
 if(p==='settings'){document.getElementById('darkToggle').classList.toggle('on',S.theme==='dark');document.getElementById('reminderToggle').classList.toggle('on',S.reminder)}
 window.scrollTo(0,0)
 }
@@ -501,6 +530,50 @@ function ag(){const n=document.getElementById('modalName').value.trim();if(!n){s
 
 function stt2(){const d=S.currentDate;if(!S.thoughts[d])S.thoughts[d]='';S.thoughts[d]=document.getElementById('thoughtsArea').value;sd()}
 function rt(){document.getElementById('thoughtsArea').value=S.thoughts[S.currentDate]||'';const h=document.getElementById('thoughtsHistory');const ds=Object.keys(S.thoughts).sort().reverse().filter(d=>d!==S.currentDate&&S.thoughts[d].trim());h.innerHTML='';if(!ds.length){h.innerHTML='<div class="empty"><div class="empty-icon">📜</div><div class="empty-text">还没有历史感想</div></div>';return}ds.forEach(d=>{const c=document.createElement('div');c.className='thoughts-card';c.innerHTML=`<div class="date">${d}</div><div class="content">${eh(S.thoughts[d])}</div>`;c.onclick=()=>{S.currentDate=d;sd();sp('thoughts');rt()};h.appendChild(c)})}
+
+// ===== JOBS =====
+const JOB_DATA=[
+{id:'j1',title:'商务经纪/博主助理',salary:'18-25K',company:'某MCN机构',size:'20-99人',tags:['博主经纪','五险一金','弹性工作'],desc:'负责博主商务对接、品牌合作洽谈、合同跟进。不写策划方案，偏执行和沟通。上班时间10:30-19:00，周末双休。',url:'https://www.zhipin.com/web/geek/job?query=%E5%8D%9A%E4%B8%BB%E5%95%86%E5%8A%A1%E7%BB%8F%E7%BA%AA&city=100010000'},
+{id:'j2',title:'AM/SAM 客户经理',salary:'16-22K',company:'某广告公司',size:'20-99人',tags:['汽车方向','Social','五险一金'],desc:'负责汽车品牌客户日常沟通、项目推进、KOL投放对接。不需要写策划方案，偏项目管理。上班时间10:00-19:00。',url:'https://www.zhipin.com/web/geek/job?query=AM%E5%AE%A2%E6%88%B7%E7%BB%8F%E7%90%86%20%E5%B9%BF%E5%91%8A&city=100010000'},
+{id:'j3',title:'KOL商务经理',salary:'16-25K',company:'某传媒公司',size:'0-20人',tags:['KOL对接','五险一金','10:30上班'],desc:'对接短视频博主和品牌方，促成合作。小团队高效运转，扁平管理。上班时间10:30-18:30，弹性打卡。',url:'https://www.zhipin.com/web/geek/job?query=KOL%E5%95%86%E5%8A%A1%E7%BB%8F%E7%90%86&city=100010000'},
+{id:'j4',title:'博主商务助理',salary:'16-20K',company:'某文化公司',size:'20-99人',tags:['博主助理','五险一金','双休'],desc:'协助博主处理商务合作、品牌对接、合同整理。成长空间大，可转商务经纪。上班时间11:00-19:00，周末双休。',url:'https://www.zhipin.com/web/geek/job?query=%E5%8D%9A%E4%B8%BB%E5%8A%A9%E7%90%86%20%E5%95%86%E5%8A%A1&city=100010000'},
+{id:'j5',title:'Social AM 社媒客户经理',salary:'18-24K',company:'某营销公司',size:'20-99人',tags:['Social','汽车品类','五险一金'],desc:'负责汽车品牌社交媒体投放项目管理，对接KOL/KOC资源。不需写方案，偏执行。上班时间10:00-18:30。',url:'https://www.zhipin.com/web/geek/job?query=Social%20AM%20%E5%AE%A2%E6%88%B7%E7%BB%8F%E7%90%86&city=100010000'},
+{id:'j6',title:'MCN商务经纪人',salary:'16-25K',company:'某MCN机构',size:'0-20人',tags:['MCN','五险一金','弹性'],desc:'负责签约博主的商务变现，品牌资源对接。小而精团队，成长快。上班时间10:30-19:00，弹性工作制。',url:'https://www.zhipin.com/web/geek/job?query=MCN%E5%95%86%E5%8A%A1%E7%BB%8F%E7%BA%AA%E4%BA%BA&city=100010000'},
+{id:'j7',title:'广告客户经理(汽车)',salary:'16-22K',company:'某创意广告',size:'20-99人',tags:['汽车广告','AM','五险一金'],desc:'汽车品牌广告项目客户管理，对接创意团队和客户。不写策划，偏沟通协调。上班时间10:00-19:00。',url:'https://www.zhipin.com/web/geek/job?query=%E5%B9%BF%E5%91%8A%E5%AE%A2%E6%88%B7%E7%BB%8F%E7%90%86%20%E6%B1%BD%E8%BD%A6&city=100010000'},
+{id:'j8',title:'短视频商务BD',salary:'16-25K',company:'某新媒体公司',size:'0-20人',tags:['短视频','BD','五险一金'],desc:'负责短视频账号商务合作开发，品牌方拓展。小团队大空间。上班时间11:00-19:00，周末双休。',url:'https://www.zhipin.com/web/geek/job?query=%E7%9F%AD%E8%A7%86%E9%A2%91%E5%95%86%E5%8A%A1BD&city=100010000'}
+];
+function rj(){
+if(!S.appliedJobs)S.appliedJobs=[];
+const pn=document.getElementById('jobsPanel');
+let h='';
+JOB_DATA.forEach(j=>{
+const applied=S.appliedJobs.includes(j.id);
+const tagHtml=j.tags.map((t,i)=>{
+const cls=i===0?'hot':(i===1?'green':'blue');
+return `<span class="job-tag ${cls}">${t}</span>`;
+}).join('');
+h+=`<div class="job-card ${applied?'applied':''}" onclick="openBoss('${j.id}')">
+<div class="job-card-header"><div class="job-title">${j.title}${applied?'<span class="job-applied-badge">✓ 已投递</span>':''}</div><div class="job-salary">${j.salary}</div></div>
+<div class="job-tags">${tagHtml}</div>
+<div class="job-company">${j.company} · ${j.size}</div>
+<div class="job-desc">${j.desc}</div>
+<div class="job-time">🕐 点击跳转 Boss 直聘投递</div>
+</div>`;
+});
+pn.innerHTML=h;
+const cache=localStorage.getItem('jobCache');
+if(cache){const p=JSON.parse(cache);document.getElementById('jobsUpdateTime').textContent=new Date(p.time).toLocaleString('zh-CN')}
+else{document.getElementById('jobsUpdateTime').textContent=new Date().toLocaleString('zh-CN');localStorage.setItem('jobCache',JSON.stringify({time:Date.now()}))}
+}
+function openBoss(jid){
+const job=JOB_DATA.find(j=>j.id===jid);
+if(!job)return;
+if(!S.appliedJobs)S.appliedJobs=[];
+if(!S.appliedJobs.includes(jid)){S.appliedJobs.push(jid);sd()}
+window.open(job.url,'_blank');
+setTimeout(()=>rj(),500);
+}
+function refreshJobs(){localStorage.removeItem('jobCache');document.getElementById('jobsPanel').innerHTML='<div class="loading-spinner"><div class="spinner"></div>刷新岗位中...</div>';localStorage.setItem('jobCache',JSON.stringify({time:Date.now()}));setTimeout(()=>rj(),600)}
 
 // ===== VIRAL =====
 function openDouyin(url){
@@ -579,7 +652,7 @@ document.getElementById('monthDailyCount').textContent=cnt.daily+'天';document.
 
 function exd(){const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`云工作台_${fd(new Date())}.json`;a.click();URL.revokeObjectURL(a.href);st('已导出')}
 function imd(){const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{S={...S,...JSON.parse(ev.target.result)};sd();ra('daily');st('导入成功')}catch(err){st('文件格式错误')}};r.readAsText(f)};i.click()}
-function cad(){if(!confirm('确定清除所有数据？此操作不可撤销！'))return;if(!confirm('再次确认！'))return;localStorage.removeItem(K);S={theme:S.theme,reminder:S.reminder,currentDate:fd(new Date()),currentMonth:fm(new Date()),data:{},monthlyGoals:{},thoughts:{},viralVideos:[],energy:{}};sd();ra('daily');st('已清除')}
+function cad(){if(!confirm('确定清除所有数据？此操作不可撤销！'))return;if(!confirm('再次确认！'))return;localStorage.removeItem(K);S={theme:S.theme,reminder:S.reminder,currentDate:fd(new Date()),currentMonth:fm(new Date()),data:{},monthlyGoals:{},thoughts:{},viralVideos:[],energy:{},appliedJobs:[]};sd();ra('daily');st('已清除')}
 
 function st(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
 
