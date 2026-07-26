@@ -189,11 +189,10 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 .job-desc{font-size:13px;color:var(--text);line-height:1.6;margin-bottom:8px;}
 .job-time{font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:4px;}
 .job-applied-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:var(--green-bg);color:var(--green);font-weight:600;margin-left:8px;}
-.job-search-key{font-size:13px;color:var(--text-secondary);background:var(--primary-bg);border-radius:8px;padding:6px 10px;margin-bottom:8px;}
-.job-search-key strong{color:var(--primary);font-weight:700;}
-.job-city-btns{display:flex;gap:8px;margin-bottom:8px;}
-.job-city-btn{flex:1;padding:8px;border:1.5px solid var(--primary);border-radius:10px;background:var(--primary-bg);color:var(--primary);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
-.job-city-btn:active{background:var(--primary);color:white;}
+.job-search-key{font-size:13px;color:var(--text-secondary);background:var(--primary-bg);border-radius:10px;padding:8px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.job-search-key strong{color:var(--primary);font-weight:700;flex:1;word-break:break-all;}
+.job-copy-btn{flex-shrink:0;background:var(--primary);color:white;border:none;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+.job-copy-btn:active{transform:scale(.92);background:var(--primary-dark);}
 
 /* Viral */
 .viral-card{margin:0 24px 16px;background:var(--card);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow);}
@@ -410,7 +409,7 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 
 <!-- Jobs Page -->
 <div id="jobsPage" class="page">
-<div class="section-title-row"><h2>💼 就业入职 · 上海</h2></div>
+<div class="section-title-row"><h2>💼 就业入职</h2></div>
 <div class="jobs-filter-hint">🔍 筛选：小公司(0-99人) · 10-11点上班 · 16-25K · 五险一金</div>
 <div class="jobs-cat-row" id="jobsCatRow">
 <button class="jobs-cat-btn active" onclick="switchJobCat('kol','this')">KOL商务</button>
@@ -419,7 +418,7 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 <button class="jobs-cat-btn" onclick="switchJobCat('bd','this')">商务BD</button>
 </div>
 <div id="jobsList"></div>
-<div class="jobs-refresh-hint">💡 点击「去Boss搜索」直接打开 Boss 直聘 App<br>在搜索结果里点「立即沟通」即可投递<br>已投递的岗位会变浅色 · <span onclick="refreshJobs()" style="color:var(--primary);cursor:pointer;">🔄 刷新</span></div>
+<div class="jobs-refresh-hint">💡 点卡片打开 Boss App · 点「复制」复制关键词去搜索<br>已投递的岗位会变浅色 · <span onclick="refreshJobs()" style="color:var(--primary);cursor:pointer;">🔄 刷新</span></div>
 </div>
 
 <!-- Settings Page -->
@@ -593,9 +592,8 @@ h+=`<div class="job-card ${applied?'applied':''}" onclick="openBoss('${j.id}')">
 <div class="job-tags">${tagHtml}</div>
 <div class="job-company">${j.company} · ${j.size}</div>
 <div class="job-desc">${j.desc}</div>
-<div class="job-search-key">🔍 搜索关键词：<strong>${j.searchKey||j.title}</strong></div>
-<div class="job-city-btns"><button class="job-city-btn" onclick="event.stopPropagation();openBossCity('${j.id}','101020100')">📍 上海 · 点击搜索投递</button></div>
-<div class="job-time">点击卡片唤起App，或选城市搜索 →</div>
+<div class="job-search-key" onclick="event.stopPropagation()"><strong>${j.searchKey||j.title}</strong><button class="job-copy-btn" onclick="copyKey('${j.id}',this)">复制</button></div>
+<div class="job-time">👆 点卡片打开 Boss App</div>
 </div>`;
 });
 pn.innerHTML=h;
@@ -608,34 +606,27 @@ var job=JOB_DATA.find(function(j){return j.id===jid});
 if(!job)return;
 if(!S.appliedJobs)S.appliedJobs=[];
 if(!S.appliedJobs.includes(jid)){S.appliedJobs.push(jid);sd()}
+// 只唤起 Boss App，不做网页 fallback（避免跳到登录页）
 var query=encodeURIComponent(job.searchKey||job.title);
-var ua=navigator.userAgent.toLowerCase();
-var isIOS=/iphone|ipad|ipod/.test(ua);
-// 上海101020100 西安101110100，默认搜索全国
-var schemeUrl='bosszhipin://joblist?query='+query;
-var webUrl='https://www.zhipin.com/web/geek/job?query='+query+'&city=101020100';
-if(isIOS){
-window.location.href=schemeUrl;
-var timer=setTimeout(function(){
-window.location.href=webUrl;
-},1500);
-document.addEventListener('visibilitychange',function(){
-if(document.hidden){clearTimeout(timer)}
-},{once:true});
-}else{
-window.location.href=webUrl;
-}
+window.location.href='bosszhipin://joblist?query='+query;
 setTimeout(function(){rj()},800)
 }
-function openBossCity(jid,city){
+function copyKey(jid,btn){
 var job=JOB_DATA.find(function(j){return j.id===jid});
 if(!job)return;
-if(!S.appliedJobs)S.appliedJobs=[];
-if(!S.appliedJobs.includes(jid)){S.appliedJobs.push(jid);sd()}
-var query=encodeURIComponent(job.searchKey||job.title);
-var webUrl='https://www.zhipin.com/web/geek/job?query='+query+'&city='+city;
-window.open(webUrl,'_blank');
-setTimeout(function(){rj()},800)
+var text=job.searchKey||job.title;
+var done=function(){
+var old=btn.textContent;btn.textContent='已复制 ✓';btn.style.background='var(--green)';
+setTimeout(function(){btn.textContent=old;btn.style.background=''},1500)
+};
+if(navigator.clipboard&&navigator.clipboard.writeText){
+navigator.clipboard.writeText(text).then(done).catch(function(){fallbackCopy(text,done)})
+}else{fallbackCopy(text,done)}
+}
+function fallbackCopy(text,cb){
+var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+try{document.execCommand('copy');cb()}catch(e){}
+document.body.removeChild(ta)
 }
 
 function refreshJobs(){localStorage.removeItem('jobCache');document.getElementById('jobsPanel').innerHTML='<div class="loading-spinner"><div class="spinner"></div>刷新岗位中...</div>';localStorage.setItem('jobCache',JSON.stringify({time:Date.now()}));setTimeout(()=>rj(),600)}
