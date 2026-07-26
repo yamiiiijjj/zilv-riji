@@ -189,6 +189,8 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 .job-desc{font-size:13px;color:var(--text);line-height:1.6;margin-bottom:8px;}
 .job-time{font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:4px;}
 .job-applied-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:var(--green-bg);color:var(--green);font-weight:600;margin-left:8px;}
+.job-search-key{font-size:13px;color:var(--text-secondary);background:var(--primary-bg);border-radius:8px;padding:6px 10px;margin-bottom:8px;}
+.job-search-key strong{color:var(--primary);font-weight:700;}
 
 /* Viral */
 .viral-card{margin:0 24px 16px;background:var(--card);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow);}
@@ -408,7 +410,7 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 <div class="section-title-row"><h2>💼 就业入职</h2></div>
 <div class="jobs-filter-hint">🔍 筛选：小公司(0-99人) · 10-11点上班 · 16-25K · 五险一金</div>
 <div id="jobsPanel"><div class="loading-spinner"><div class="spinner"></div>加载岗位中...</div></div>
-<div class="jobs-refresh-hint">💡 点击岗位卡片跳转 Boss 直聘投递<br>已投递的岗位会变浅色，每 3 小时自动刷新<br>上次更新：<span id="jobsUpdateTime">—</span></div>
+<div class="jobs-refresh-hint">💡 点击卡片打开 Boss 直聘搜索对应岗位<br>装了 App 会自动唤起，在结果里点「立即沟通」即可<br>已投递的岗位会变浅色 · 上次更新：<span id="jobsUpdateTime">—</span></div>
 </div>
 
 <!-- Settings Page -->
@@ -568,7 +570,8 @@ h+=`<div class="job-card ${applied?'applied':''}" onclick="openBoss('${j.id}')">
 <div class="job-tags">${tagHtml}</div>
 <div class="job-company">${j.company} · ${j.size}</div>
 <div class="job-desc">${j.desc}</div>
-<div class="job-time">🕐 点击跳转 Boss 直聘投递</div>
+<div class="job-search-key">🔍 搜索关键词：<strong>${j.searchKey||j.title}</strong></div>
+<div class="job-time">点击直达 Boss 直聘搜索该岗位 →</div>
 </div>`;
 });
 pn.innerHTML=h;
@@ -581,34 +584,13 @@ var job=JOB_DATA.find(function(j){return j.id===jid});
 if(!job)return;
 if(!S.appliedJobs)S.appliedJobs=[];
 if(!S.appliedJobs.includes(jid)){S.appliedJobs.push(jid);sd()}
-var ua=navigator.userAgent.toLowerCase();
-var isIOS=/iphone|ipad|ipod/.test(ua);
-var isAndroid=/android/.test(ua);
-// Boss直聘App的Universal Link - 直接打开App内的搜索结果页
-// 格式: bosszp://job/search?query=关键词
-// iOS和Android都支持这个scheme
 var query=encodeURIComponent(job.searchKey||job.title);
-var bossUrl='bosszp://job/search?query='+query+'&city=101010100';
-if(isIOS){
-// iOS: 直接用scheme唤起，2秒后兜底打开网页版
-window.location.href=bossUrl;
-setTimeout(function(){
-window.location.href='https://www.zhipin.com/web/geek/job?query='+query+'&city=101010100'
-},2000)
-}else if(isAndroid){
-var iframe=document.createElement('iframe');
-iframe.style.display='none';
-iframe.src=bossUrl;
-document.body.appendChild(iframe);
-setTimeout(function(){try{document.body.removeChild(iframe)}catch(e){}},2000);
-setTimeout(function(){
-window.location.href='https://www.zhipin.com/web/geek/job?query='+query+'&city=101010100'
-},2000)
-}else{
-window.location.href='https://www.zhipin.com/web/geek/job?query='+query+'&city=101010100'
-}
+// Boss直聘Universal Link: 打开这个URL，如果装了App会自动唤起并显示搜索结果
+var bossSearchUrl='https://www.zhipin.com/web/geek/job?query='+query+'&city=101010100';
+window.open(bossSearchUrl,'_blank');
 setTimeout(function(){rj()},800)
 }
+
 function refreshJobs(){localStorage.removeItem('jobCache');document.getElementById('jobsPanel').innerHTML='<div class="loading-spinner"><div class="spinner"></div>刷新岗位中...</div>';localStorage.setItem('jobCache',JSON.stringify({time:Date.now()}));setTimeout(()=>rj(),600)}
 
 // ===== VIRAL =====
