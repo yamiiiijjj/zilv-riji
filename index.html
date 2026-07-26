@@ -585,9 +585,28 @@ if(!job)return;
 if(!S.appliedJobs)S.appliedJobs=[];
 if(!S.appliedJobs.includes(jid)){S.appliedJobs.push(jid);sd()}
 var query=encodeURIComponent(job.searchKey||job.title);
-// Boss直聘Universal Link: 打开这个URL，如果装了App会自动唤起并显示搜索结果
-var bossSearchUrl='https://www.zhipin.com/web/geek/job?query='+query+'&city=101010100';
-window.open(bossSearchUrl,'_blank');
+var ua=navigator.userAgent.toLowerCase();
+var isIOS=/iphone|ipad|ipod/.test(ua);
+// 方案1: 尝试用Boss直聘App scheme唤起
+// bosszhipin:// 是Boss直聘的URL Scheme
+var schemeUrl='bosszhipin://joblist?query='+query;
+// 方案2: 兜底用网页搜索
+var webUrl='https://www.zhipin.com/web/geek/job?query='+query+'&city=101010100';
+if(isIOS){
+// iOS: 先尝试唤起App
+window.location.href=schemeUrl;
+// 1.5秒后如果还在当前页面，说明没装App或没唤起，打开网页版
+var timer=setTimeout(function(){
+window.location.href=webUrl;
+},1500);
+// 如果App成功打开，页面会隐藏，清除timer
+document.addEventListener('visibilitychange',function(){
+if(document.hidden){clearTimeout(timer)}
+},{once:true});
+}else{
+// Android/其他: 直接打开网页版，浏览器会自动唤起App
+window.location.href=webUrl;
+}
 setTimeout(function(){rj()},800)
 }
 
