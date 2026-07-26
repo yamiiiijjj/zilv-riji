@@ -411,7 +411,7 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 <!-- Jobs Page -->
 <div id="jobsPage" class="page">
 <div class="section-title-row"><h2>💼 就业入职</h2></div>
-<div class="jobs-filter-hint">🔍 筛选：上海/西安 · 小公司(0-99人) · 10-11点上班 · 16-25K · 五险一金</div>
+<div class="jobs-filter-hint">🔍 筛选：上海 · 小公司(0-99人) · 10-11点上班 · 16-25K · 五险一金</div>
 <div id="jobsPanel"><div class="loading-spinner"><div class="spinner"></div>加载岗位中...</div></div>
 <div class="jobs-refresh-hint">💡 点击卡片打开 Boss 直聘搜索对应岗位<br>装了 App 会自动唤起，在结果里点「立即沟通」即可<br>已投递的岗位会变浅色 · 上次更新：<span id="jobsUpdateTime">—</span></div>
 </div>
@@ -574,7 +574,7 @@ h+=`<div class="job-card ${applied?'applied':''}" onclick="openBoss('${j.id}')">
 <div class="job-company">${j.company} · ${j.size}</div>
 <div class="job-desc">${j.desc}</div>
 <div class="job-search-key">🔍 搜索关键词：<strong>${j.searchKey||j.title}</strong></div>
-<div class="job-city-btns"><button class="job-city-btn" onclick="event.stopPropagation();openBossCity('${j.id}','101020100')">📍 上海</button><button class="job-city-btn" onclick="event.stopPropagation();openBossCity('${j.id}','101110100')">📍 西安</button></div>
+<div class="job-city-btns"><button class="job-city-btn" onclick="event.stopPropagation();openBossCity('${j.id}','101020100')">📍 上海 · 点击搜索投递</button></div>
 <div class="job-time">点击卡片唤起App，或选城市搜索 →</div>
 </div>`;
 });
