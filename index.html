@@ -35,6 +35,17 @@ background:var(--bg);color:var(--text);min-height:100vh;
 transition:background .3s,color .3s;-webkit-font-smoothing:antialiased;overscroll-behavior:none;
 }
 
+/* Energy card */
+.energy-card{margin:0 24px 16px;background:linear-gradient(135deg,#10b981,#059669);border-radius:20px;padding:18px 20px;box-shadow:0 4px 16px rgba(16,185,129,0.2);position:relative;overflow:hidden;color:white;}
+.energy-card::before{content:'';position:absolute;top:-30px;right:-30px;width:140px;height:140px;background:rgba(255,255,255,0.1);border-radius:50%;}
+.energy-card::after{content:'';position:absolute;bottom:-40px;left:20px;width:100px;height:100px;background:rgba(255,255,255,0.08);border-radius:50%;}
+.energy-header{font-size:12px;font-weight:600;opacity:.9;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.energy-quote{font-size:18px;font-weight:700;line-height:1.5;margin-bottom:8px;position:relative;z-index:1;}
+.energy-desc{font-size:13px;opacity:.85;line-height:1.5;margin-bottom:12px;position:relative;z-index:1;}
+.energy-btn{background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.4);color:white;padding:6px 16px;border-radius:14px;font-size:13px;font-weight:600;cursor:pointer;backdrop-filter:blur(10px);transition:all .2s;display:inline-flex;align-items:center;gap:4px;position:relative;z-index:1;}
+.energy-btn:active{transform:scale(.95);background:rgba(255,255,255,0.35);}
+[data-theme="dark"] .energy-card{box-shadow:0 4px 16px rgba(0,0,0,0.4);}
+
 /* Layout */
 .app-wrap{display:flex;min-height:100vh;}
 .sidebar{
@@ -293,6 +304,7 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 
 <!-- ===== 每日计划 Page ===== -->
 <div id="dailyPage" class="page active">
+<div class="energy-card" id="energyCard"></div>
 <div class="date-bar" id="dailyDateBar"></div>
 <div class="stats-row" id="dailyStatsRow"></div>
 <div class="section" id="dailySection">
@@ -305,6 +317,7 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 
 <!-- ===== 英语学习 Page ===== -->
 <div id="englishPage" class="page">
+<div class="energy-card" id="energyCard"></div>
 <div class="date-bar" id="englishDateBar"></div>
 <div class="stats-row" id="englishStatsRow"></div>
 <div class="section" id="englishSection">
@@ -317,6 +330,7 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 
 <!-- ===== 减肥 Page ===== -->
 <div id="fitnessPage" class="page">
+<div class="energy-card" id="energyCard"></div>
 <div class="date-bar" id="fitnessDateBar"></div>
 <div class="stats-row" id="fitnessStatsRow"></div>
 <div class="section" id="fitnessSection">
@@ -417,7 +431,7 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 <div class="toast" id="toast"></div>
 <script>
 const K='sd_v3',CATS=['daily','english','fitness'];
-let S={theme:'light',reminder:!1,currentDate:fd(new Date()),currentMonth:fm(new Date()),data:{},monthlyGoals:{},thoughts:{},viralVideos:[]};
+let S={theme:'light',reminder:!1,currentDate:fd(new Date()),currentMonth:fm(new Date()),data:{},monthlyGoals:{},thoughts:{},viralVideos:[],energy:{}};
 let mcat='daily',vtd=[];
 function fd(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function fm(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
@@ -442,7 +456,7 @@ const sbid='sb'+p.charAt(0).toUpperCase()+p.slice(1);
 const titles={daily:'每日计划',english:'英语学习',fitness:'减肥',viral:'爆款视频',monthly:'月度计划',thoughts:'感想',settings:'设置'};
 document.getElementById('pageTitle').textContent=titles[p];
 if(['daily','english','fitness'].includes(p)){
-rdb(p);rss(p);rs(p)
+renderEnergy();rdb(p);rss(p);rs(p)
 }else if(p==='viral')rv();else if(p==='monthly')rm();else if(p==='thoughts')rt();
 if(p==='settings'){document.getElementById('darkToggle').classList.toggle('on',S.theme==='dark');document.getElementById('reminderToggle').classList.toggle('on',S.reminder)}
 window.scrollTo(0,0)
@@ -567,12 +581,71 @@ document.getElementById('monthDailyCount').textContent=cnt.daily+'天';document.
 
 function exd(){const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`自律日记_${fd(new Date())}.json`;a.click();URL.revokeObjectURL(a.href);st('已导出')}
 function imd(){const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{S={...S,...JSON.parse(ev.target.result)};sd();ra('daily');st('导入成功')}catch(err){st('文件格式错误')}};r.readAsText(f)};i.click()}
-function cad(){if(!confirm('确定清除所有数据？此操作不可撤销！'))return;if(!confirm('再次确认！'))return;localStorage.removeItem(K);S={theme:S.theme,reminder:S.reminder,currentDate:fd(new Date()),currentMonth:fm(new Date()),data:{},monthlyGoals:{},thoughts:{},viralVideos:[]};sd();ra('daily');st('已清除')}
+function cad(){if(!confirm('确定清除所有数据？此操作不可撤销！'))return;if(!confirm('再次确认！'))return;localStorage.removeItem(K);S={theme:S.theme,reminder:S.reminder,currentDate:fd(new Date()),currentMonth:fm(new Date()),data:{},monthlyGoals:{},thoughts:{},viralVideos:[],energy:{}};sd();ra('daily');st('已清除')}
 
 function st(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
 
 // ra() now takes a page argument to refresh the current module
-function ra(page){rdb(page);rss(page);rs(page)}
+function ra(page){renderEnergy();rdb(page);rss(page);rs(page)}
+
+// ===== Energy quotes =====
+const ENERGY_QUOTES=[
+{quote:'你现在的低谷，是起飞前的助跑。',desc:'所有做起来的人，都经历过你现在这个阶段。'},
+{quote:'别让明天的自己，瞧不起今天的你。',desc:'每天进步一点点，一年后你会感谢现在的坚持。'},
+{quote:'自律的苦，终会变成自由的路。',desc:'那些熬过的夜、读过的书、跑过的步，都在铺就你的路。'},
+{quote:'不想认命，就拼命。',desc:'你有权利成为自己想成为的样子。'},
+{quote:'世界上有两种人：一种是醒来后继续昨天的梦，一种是从梦里醒来。',desc:'你是哪一种？今天就决定。'},
+{quote:'你必须非常努力，才能看起来毫不费力。',desc:'成功的路上没有捷径，只有不断的积累。'},
+{quote:'今天的努力，是给未来的自己最好的礼物。',desc:'把焦虑的时间用来行动，答案自然会浮现。'},
+{quote:'要么出众，要么出局。',desc:'生活的真相是：你不动，就会被生活推着走。'},
+{quote:'你想要的，都藏在你吃过的苦里。',desc:'没有白费的努力，也没有白走的路。'},
+{quote:'不要在该奋斗的年纪选择安逸。',desc:'选择安逸的那一刻开始，你就输了。'},
+{quote:'星光不问赶路人，时光不负有心人。',desc:'你只管努力，剩下的交给时间。'},
+{quote:'一个人最大的破产，是绝望。',desc:'永远相信美好的事情即将发生。'},
+{quote:'越自律，越自由。',desc:'真正的高手，都在享受孤独和自律。'},
+{quote:'没有天生的好命，只有后天的拼命。',desc:'生活从不亏待每一个努力向上的人。'},
+{quote:'请再拼一点，为了你想见的人，想去的地方。',desc:'未来的你，一定会感谢现在拼命的自己。'},
+{quote:'你想变强，就要和强者交朋友。',desc:'远离消耗你的人，靠近赋能你的人。'},
+{quote:'不为模糊不清的未来担忧，只为清清楚楚的现在努力。',desc:'过好每一个今天，就是最好的修行。'},
+{quote:'真正厉害的人，都很会休息。',desc:'休息不是放纵，是为了走更远的路。'},
+{quote:'愿你成为自己的太阳，无需凭借谁的光。',desc:'独立，是一个人最大的底气。'},
+{quote:'行动，是打败焦虑最好的方式。',desc:'做，就对了。'},
+{quote:'把平凡的事做极致，就是不平凡。',desc:'高手都在重复，菜鸟在挑活。'},
+{quote:'你坚持的东西，总有一天会反过来拥抱你。',desc:'别停下，继续走。'},
+{quote:'与其追逐繁星，不如成为月光。',desc:'照亮自己，也能照亮别人。'},
+{quote:'时光不会辜负每一份努力。',desc:'你只管深耕，时间会给你答案。'},
+{quote:'乾坤未定，你我皆是黑马。',desc:'不到最后一刻，谁都不知道结局。'},
+{quote:'没有人能阻挡一个想要变强的心。',desc:'你的决心，就是你最大的资本。'},
+{quote:'努力不一定成功，但放弃一定失败。',desc:'选择坚持，就是选择希望。'},
+{quote:'把每一个平凡的日子都过成诗。',desc:'热爱生活的人，永远年轻。'},
+{quote:'所谓深渊，下去也是前程万里。',desc:'别怕跌倒，爬起来就好。'},
+{quote:'人生没有白走的路，每一步都算数。',desc:'你走的每一步，都在塑造你自己。'}
+];
+function getEnergyOfToday(){
+const today=S.currentDate;
+const cached=S.energy&&S.energy[today];
+if(cached)return cached;
+return pickEnergy();
+}
+function pickEnergy(){
+const idx=Math.floor(Math.random()*ENERGY_QUOTES.length);
+return ENERGY_QUOTES[idx];
+}
+function renderEnergy(){
+const e=getEnergyOfToday();
+const c=document.getElementById('energyCard');
+if(!c)return;
+c.innerHTML=`<div class="energy-header">☀️ 今日能量</div><div class="energy-quote">"${e.quote}"</div><div class="energy-desc">${e.desc}</div><button class="energy-btn" onclick="shuffleEnergy()">换一句 🔄</button>`;
+}
+function shuffleEnergy(){
+const today=S.currentDate;
+const current=getEnergyOfToday();
+let next;
+do{next=pickEnergy()}while(next.quote===current.quote);
+if(!S.energy)S.energy={};
+S.energy[today]=next;
+sd();renderEnergy();
+}
 
 ld();at();ra('daily');
 document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)cm()});
