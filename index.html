@@ -410,10 +410,16 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 
 <!-- Jobs Page -->
 <div id="jobsPage" class="page">
-<div class="section-title-row"><h2>💼 就业入职</h2></div>
-<div class="jobs-filter-hint">🔍 筛选：上海 · 小公司(0-99人) · 10-11点上班 · 16-25K · 五险一金</div>
-<div id="jobsPanel"><div class="loading-spinner"><div class="spinner"></div>加载岗位中...</div></div>
-<div class="jobs-refresh-hint">💡 点击卡片打开 Boss 直聘搜索对应岗位<br>装了 App 会自动唤起，在结果里点「立即沟通」即可<br>已投递的岗位会变浅色 · 上次更新：<span id="jobsUpdateTime">—</span></div>
+<div class="section-title-row"><h2>💼 就业入职 · 上海</h2></div>
+<div class="jobs-filter-hint">🔍 筛选：小公司(0-99人) · 10-11点上班 · 16-25K · 五险一金</div>
+<div class="jobs-cat-row" id="jobsCatRow">
+<button class="jobs-cat-btn active" onclick="switchJobCat('kol','this')">KOL商务</button>
+<button class="jobs-cat-btn" onclick="switchJobCat('media','this')">媒介投放</button>
+<button class="jobs-cat-btn" onclick="switchJobCat('ad','this')">广告AM</button>
+<button class="jobs-cat-btn" onclick="switchJobCat('bd','this')">商务BD</button>
+</div>
+<div id="jobsList"></div>
+<div class="jobs-refresh-hint">💡 点击「去Boss搜索」直接打开 Boss 直聘 App<br>在搜索结果里点「立即沟通」即可投递<br>已投递的岗位会变浅色 · <span onclick="refreshJobs()" style="color:var(--primary);cursor:pointer;">🔄 刷新</span></div>
 </div>
 
 <!-- Settings Page -->
@@ -558,11 +564,25 @@ const JOB_DATA=[
 {id:'j15',title:'KOL资源运营',salary:'16-23K',searchKey:'KOL资源运营',company:'某母婴品牌(甲方)',size:'20-99人',tags:['甲方','KOL资源','五险一金'],desc:'维护品牌KOL资源库，日常建联博主、跟进合作排期、整理数据。工作偏执行和表格管理。上班时间10:00-18:30，双休。',url:'https://www.zhipin.com/web/geek/job?query=KOL%E8%B5%84%E6%BA%90%E8%BF%90%E8%90%A5&city=101020100'},
 {id:'j16',title:'内容商务专员',salary:'16-22K',searchKey:'内容商务专员',company:'某教育品牌(甲方)',size:'0-20人',tags:['甲方','内容商务','五险一金'],desc:'负责品牌内容投放的博主对接，建联KOL、跟进内容合作。不需要写内容，偏商务沟通。上班时间11:00-19:00。',url:'https://www.zhipin.com/web/geek/job?query=%E5%86%85%E5%AE%B9%E5%95%86%E5%8A%A1%E4%B8%93%E5%91%98&city=101020100'}
 ];
+var JOB_CAT='kol';
+var JOB_CATS={
+kol:{name:'KOL商务',jobs:['j1','j3','j4','j6','j13']},
+media:{name:'媒介投放',jobs:['j9','j10','j11','j12','j14','j15','j16']},
+ad:{name:'广告AM',jobs:['j2','j5','j7']},
+bd:{name:'商务BD',jobs:['j8']}
+};
+function switchJobCat(cat,btn){
+JOB_CAT=cat;
+document.querySelectorAll('.jobs-cat-btn').forEach(function(b){b.classList.remove('active')});
+if(btn)btn.classList.add('active');
+rj();
+}
 function rj(){
 if(!S.appliedJobs)S.appliedJobs=[];
-const pn=document.getElementById('jobsPanel');
+var pn=document.getElementById('jobsList');
+if(!pn)return;
 let h='';
-JOB_DATA.forEach(j=>{
+var catJobs=JOB_CATS[JOB_CAT]?JOB_CATS[JOB_CAT].jobs:[];var filteredJobs=JOB_DATA.filter(function(j){return catJobs.indexOf(j.id)>=0});filteredJobs.forEach(function(j){
 const applied=S.appliedJobs.includes(j.id);
 const tagHtml=j.tags.map((t,i)=>{
 const cls=i===0?'hot':(i===1?'green':'blue');
