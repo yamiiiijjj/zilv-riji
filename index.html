@@ -191,6 +191,9 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 .job-applied-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:var(--green-bg);color:var(--green);font-weight:600;margin-left:8px;}
 .job-search-key{font-size:13px;color:var(--text-secondary);background:var(--primary-bg);border-radius:8px;padding:6px 10px;margin-bottom:8px;}
 .job-search-key strong{color:var(--primary);font-weight:700;}
+.job-city-btns{display:flex;gap:8px;margin-bottom:8px;}
+.job-city-btn{flex:1;padding:8px;border:1.5px solid var(--primary);border-radius:10px;background:var(--primary-bg);color:var(--primary);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.job-city-btn:active{background:var(--primary);color:white;}
 
 /* Viral */
 .viral-card{margin:0 24px 16px;background:var(--card);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow);}
@@ -408,7 +411,7 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 <!-- Jobs Page -->
 <div id="jobsPage" class="page">
 <div class="section-title-row"><h2>💼 就业入职</h2></div>
-<div class="jobs-filter-hint">🔍 筛选：上海 · 小公司(0-99人) · 10-11点上班 · 16-25K · 五险一金</div>
+<div class="jobs-filter-hint">🔍 筛选：上海/西安 · 小公司(0-99人) · 10-11点上班 · 16-25K · 五险一金</div>
 <div id="jobsPanel"><div class="loading-spinner"><div class="spinner"></div>加载岗位中...</div></div>
 <div class="jobs-refresh-hint">💡 点击卡片打开 Boss 直聘搜索对应岗位<br>装了 App 会自动唤起，在结果里点「立即沟通」即可<br>已投递的岗位会变浅色 · 上次更新：<span id="jobsUpdateTime">—</span></div>
 </div>
@@ -571,7 +574,8 @@ h+=`<div class="job-card ${applied?'applied':''}" onclick="openBoss('${j.id}')">
 <div class="job-company">${j.company} · ${j.size}</div>
 <div class="job-desc">${j.desc}</div>
 <div class="job-search-key">🔍 搜索关键词：<strong>${j.searchKey||j.title}</strong></div>
-<div class="job-time">点击直达 Boss 直聘搜索该岗位 →</div>
+<div class="job-city-btns"><button class="job-city-btn" onclick="event.stopPropagation();openBossCity('${j.id}','101020100')">📍 上海</button><button class="job-city-btn" onclick="event.stopPropagation();openBossCity('${j.id}','101110100')">📍 西安</button></div>
+<div class="job-time">点击卡片唤起App，或选城市搜索 →</div>
 </div>`;
 });
 pn.innerHTML=h;
@@ -587,26 +591,30 @@ if(!S.appliedJobs.includes(jid)){S.appliedJobs.push(jid);sd()}
 var query=encodeURIComponent(job.searchKey||job.title);
 var ua=navigator.userAgent.toLowerCase();
 var isIOS=/iphone|ipad|ipod/.test(ua);
-// 方案1: 尝试用Boss直聘App scheme唤起
-// bosszhipin:// 是Boss直聘的URL Scheme
+// 上海101020100 西安101110100，默认搜索全国
 var schemeUrl='bosszhipin://joblist?query='+query;
-// 方案2: 兜底用网页搜索
 var webUrl='https://www.zhipin.com/web/geek/job?query='+query+'&city=101020100';
 if(isIOS){
-// iOS: 先尝试唤起App
 window.location.href=schemeUrl;
-// 1.5秒后如果还在当前页面，说明没装App或没唤起，打开网页版
 var timer=setTimeout(function(){
 window.location.href=webUrl;
 },1500);
-// 如果App成功打开，页面会隐藏，清除timer
 document.addEventListener('visibilitychange',function(){
 if(document.hidden){clearTimeout(timer)}
 },{once:true});
 }else{
-// Android/其他: 直接打开网页版，浏览器会自动唤起App
 window.location.href=webUrl;
 }
+setTimeout(function(){rj()},800)
+}
+function openBossCity(jid,city){
+var job=JOB_DATA.find(function(j){return j.id===jid});
+if(!job)return;
+if(!S.appliedJobs)S.appliedJobs=[];
+if(!S.appliedJobs.includes(jid)){S.appliedJobs.push(jid);sd()}
+var query=encodeURIComponent(job.searchKey||job.title);
+var webUrl='https://www.zhipin.com/web/geek/job?query='+query+'&city='+city;
+window.open(webUrl,'_blank');
 setTimeout(function(){rj()},800)
 }
 
