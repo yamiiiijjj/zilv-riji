@@ -98,6 +98,33 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 .date-chip.active{background:var(--primary);color:white;}
 .date-chip.has-data::after{content:'';display:block;width:5px;height:5px;border-radius:50%;background:var(--green);margin:3px auto 0;}
 .date-chip.active.has-data::after{background:white;}
+.date-chip.cal-btn{background:var(--primary-bg);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:18px;min-width:48px;}
+.date-chip.cal-btn.active{background:var(--primary);color:white;}
+.date-chip.future{color:var(--primary);}
+
+/* Calendar popup */
+.cal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+.cal-overlay.show{display:flex;}
+.cal-box{background:var(--card);border-radius:20px;padding:20px;width:100%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.2);}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.cal-month-label{font-size:17px;font-weight:700;color:var(--text);}
+.cal-nav-btn{width:34px;height:34px;border-radius:10px;border:none;background:var(--primary-bg);color:var(--primary);font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.cal-nav-btn:active{transform:scale(.9);background:var(--primary);color:white;}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px;}
+.cal-weekday{text-align:center;font-size:11px;font-weight:700;color:var(--text-secondary);padding:4px 0;}
+.cal-weekday.weekend{color:var(--primary);}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;transition:all .15s;position:relative;}
+.cal-day:empty{cursor:default;}
+.cal-day:not(:empty):active{transform:scale(.9);}
+.cal-day.today{color:var(--primary);font-weight:800;}
+.cal-day.selected{background:var(--primary);color:white;}
+.cal-day.has-data::after{content:'';position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:var(--green);}
+.cal-day.selected.has-data::after{background:white;}
+.cal-day.future{color:var(--primary-light);}
+.cal-day.other-month{opacity:.3;}
+.cal-today-btn{width:100%;margin-top:14px;padding:10px;border-radius:12px;border:none;background:var(--primary-bg);color:var(--primary);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
+.cal-today-btn:active{background:var(--primary);color:white;}
 
 /* Stats */
 .stats-row{display:flex;gap:12px;padding:0 24px 18px;overflow-x:auto;scrollbar-width:none;}
@@ -468,6 +495,20 @@ cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;
 </div>
 </div>
 
+<!-- Calendar Popup -->
+<div class="cal-overlay" id="calOverlay">
+<div class="cal-box">
+<div class="cal-header">
+<button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+<div class="cal-month-label" id="calMonthLabel"></div>
+<button class="cal-nav-btn" onclick="calNav(1)">›</button>
+</div>
+<div class="cal-weekdays" id="calWeekdays"></div>
+<div class="cal-days" id="calDays"></div>
+<button class="cal-today-btn" onclick="calToday()">回到今天</button>
+</div>
+</div>
+
 <div class="toast" id="toast"></div>
 <script>
 const K='sd_v3',CATS=['daily','english','fitness'];
@@ -505,6 +546,65 @@ window.scrollTo(0,0)
 function rdb(page){
 const bar=document.getElementById(page+'DateBar');bar.innerHTML='';const td=new Date(),wd=['日','一','二','三','四','五','六'];
 for(let i=6;i>=0;i--){const d=new Date(td);d.setDate(d.getDate()-i);const ds=fd(d);const ch=document.createElement('div');ch.className='date-chip';if(ds===S.currentDate)ch.classList.add('active');if(S.data[ds]&&hd(S.data[ds],page))ch.classList.add('has-data');ch.innerHTML=`<div class="weekday">${wd[d.getDay()]}</div>${d.getDate()}`;ch.onclick=()=>{S.currentDate=ds;sd();ra(page)};bar.appendChild(ch)}
+// 日历按钮：可自由选任意日期（含未来）
+const cb=document.createElement('div');cb.className='date-chip cal-btn';cb.innerHTML='📅';cb.title='选择任意日期';cb.onclick=()=>showCal(page);bar.appendChild(cb);
+// 如果当前选中日期不在最近7天里，额外显示一个 chip
+const inRecent=[];for(let i=0;i<7;i++){const d=new Date(td);d.setDate(d.getDate()-i);inRecent.push(fd(d))}
+if(inRecent.indexOf(S.currentDate)<0){
+const parts=S.currentDate.split('-');const cd=new Date(parts[0],parts[1]-1,parts[2]);const isFuture=cd>td;const extra=document.createElement('div');extra.className='date-chip'+(isFuture?' future':'')+' active';extra.innerHTML=`<div class="weekday">${wd[cd.getDay()]}</div>${cd.getDate()}${isFuture?'<div style="font-size:9px;opacity:.7">规划</div>':''}`;extra.onclick=()=>{S.currentDate=fd(new Date());sd();ra(page)};bar.appendChild(extra)
+}
+}
+
+// ===== Calendar =====
+var calViewMonth=new Date().getMonth(),calViewYear=new Date().getFullYear(),calReturnPage='daily';
+var CAL_WD=['日','一','二','三','四','五','六'];
+function showCal(page){
+calReturnPage=page||'daily';
+const parts=S.currentDate.split('-');
+calViewYear=parseInt(parts[0]);calViewMonth=parseInt(parts[1])-1;
+document.getElementById('calWeekdays').innerHTML=CAL_WD.map((w,i)=>`<div class="cal-weekday${(i===0||i===6)?' weekend':''}">${w}</div>`).join('');
+renderCal();
+document.getElementById('calOverlay').classList.add('show')
+}
+function hideCal(){document.getElementById('calOverlay').classList.remove('show')}
+function calNav(dir){
+calViewMonth+=dir;
+if(calViewMonth<0){calViewMonth=11;calViewYear--}
+if(calViewMonth>11){calViewMonth=0;calViewYear++}
+renderCal()
+}
+function calToday(){S.currentDate=fd(new Date());sd();hideCal();ra(calReturnPage)}
+function renderCal(){
+const lbl=document.getElementById('calMonthLabel');
+lbl.textContent=calViewYear+'年'+(calViewMonth+1)+'月';
+const days=document.getElementById('calDays');days.innerHTML='';
+const firstDay=new Date(calViewYear,calViewMonth,1).getDay();
+const daysInMonth=new Date(calViewYear,calViewMonth+1,0).getDate();
+const todayStr=fd(new Date());
+const prevMonthDays=new Date(calViewYear,calViewMonth,0).getDate();
+// 上月尾部填充
+for(let i=firstDay-1;i>=0;i--){
+const d=document.createElement('div');d.className='cal-day other-month';d.textContent=prevMonthDays-i;days.appendChild(d)
+}
+// 本月日期
+for(let i=1;i<=daysInMonth;i++){
+const ds=fd(new Date(calViewYear,calViewMonth,i));
+const d=document.createElement('div');d.className='cal-day';
+const dt=new Date(calViewYear,calViewMonth,i);const today=new Date();today.setHours(0,0,0,0);
+if(dt>today)d.classList.add('future');
+if(ds===todayStr)d.classList.add('today');
+if(ds===S.currentDate)d.classList.add('selected');
+if(S.data[ds]&&Object.keys(S.data[ds]).length>0)d.classList.add('has-data');
+d.textContent=i;
+d.onclick=()=>{S.currentDate=ds;sd();hideCal();ra(calReturnPage)};
+days.appendChild(d)
+}
+// 下月头部填充
+const total=firstDay+daysInMonth;
+const remain=(7-total%7)%7;
+for(let i=1;i<=remain;i++){
+const d=document.createElement('div');d.className='cal-day other-month';d.textContent=i;days.appendChild(d)
+}
 }
 
 function rss(page){
@@ -514,7 +614,10 @@ const dd=gd(S.currentDate),gls=dd[page]||[];
 const dn=gls.filter(g=>g.done||(g.target&&g.current>=g.target)).length;
 const rate=gls.length?Math.round(dn/gls.length*100):0;
 const labels={daily:'每日计划',english:'英语学习',fitness:'减肥'};
-row.innerHTML=`<div class="stat-card streak"><div class="label">🔥 连续打卡</div><div class="value">${sk}<span class="unit">天</span></div><div class="sub">坚持就是胜利</div></div><div class="stat-card rate"><div class="label">✅ 今日完成</div><div class="value">${rate}<span class="unit">%</span></div><div class="sub">${dn}/${gls.length} 项</div></div><div class="stat-card"><div class="label">📋 ${labels[page]}累计</div><div class="value">${sk}<span class="unit">天</span></div><div class="sub">自律成就自由</div></div>`
+const parts=S.currentDate.split('-');const selDate=new Date(parts[0],parts[1]-1,parts[2]);const now=new Date();now.setHours(0,0,0,0);
+const isFuture=selDate>now;const isToday=selDate.getTime()===now.getTime();
+const doneLabel=isFuture?'规划完成':(isToday?'今日完成':'当日完成');
+row.innerHTML=`<div class="stat-card streak"><div class="label">🔥 连续打卡</div><div class="value">${sk}<span class="unit">天</span></div><div class="sub">坚持就是胜利</div></div><div class="stat-card rate"><div class="label">✅ ${doneLabel}</div><div class="value">${rate}<span class="unit">%</span></div><div class="sub">${dn}/${gls.length} 项</div></div><div class="stat-card"><div class="label">📋 ${labels[page]}累计</div><div class="value">${sk}<span class="unit">天</span></div><div class="sub">自律成就自由</div></div>`
 }
 
 function rs(cat){
@@ -777,7 +880,8 @@ sd();renderEnergy();
 ld();at();ra('daily');
 document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)cm()});
 document.getElementById('monthlyModalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)cmm()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){cm();cmm();cs()}if(e.key==='Enter'&&document.getElementById('modalOverlay').classList.contains('show')){if(document.activeElement.id!=='modalName')ag()}if(e.key==='Enter'&&document.getElementById('monthlyModalOverlay').classList.contains('show')){if(document.activeElement.id!=='monthlyModalName')amg()}});
+document.getElementById('calOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)hideCal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){cm();cmm();hideCal();cs()}if(e.key==='Enter'&&document.getElementById('modalOverlay').classList.contains('show')){if(document.activeElement.id!=='modalName')ag()}if(e.key==='Enter'&&document.getElementById('monthlyModalOverlay').classList.contains('show')){if(document.activeElement.id!=='monthlyModalName')amg()}});
 if('Notification' in window&&S.reminder){Notification.requestPermission()}
 </script>
 </body>
